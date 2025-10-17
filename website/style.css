@@ -1,0 +1,60 @@
+.header {
+    position: absolute;
+    height: 90px;
+    width: 100vw;
+    background-color: cadetblue;
+    margin: 0px;
+    padding: 0px;
+    top: 0px;
+    left: 0px;
+    z-index: 1000;
+}
+
+.title {
+    font-size: 50px;
+    color: white;
+    max-width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+}
+
+.navigation {
+    max-width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.nav_link {
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+a {
+    color: white;
+    text-decoration: none;
+    padding: 5px;
+    padding-bottom: 0px;
+}
+
+a:hover {
+    color: grey;
+    background-color: rgb(220, 220, 220);
+}
+
+.header_section {
+    height: 90px;
+    top: 0px;
+}
+
+.posts {
+    position: relative;
+    width: 50vw;
+    left: 25vw;
+    height: 97vh;
+    padding: 5px;
+    padding-bottom: 0px;
+    border-color: dimgrey;
+    border-style: dashed;
+    border-top: 1px;
+    border-bottom: 1px;
+}
