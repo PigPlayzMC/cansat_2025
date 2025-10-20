@@ -9,20 +9,23 @@ async function fetchPosts() {
         }
 
         const posts_json = await response.json(); // Parsing JSON
-        return await posts_json;
+
+        console.log(posts_json.length);
+
+        let i = 0;
+        let posts = []
+        while (i < posts_json.length) {
+            console.log(posts_json[i]);
+            posts.push(posts_json[i]);
+            i += 1;
+        }
+
+        return posts;
     } catch (error) {
         console.error(error.message);
         return false;
     }
 }
 
-function getPostsForRange(max, min) {
-    console.log(max);
-    console.log(min);
-}
-
-posts_json = fetchPosts();
-
-console.log(posts_json);
-
-console.log(posts_json.message)
+let posts = fetchPosts(); // Get posts, then display posts
+console.log(posts);
