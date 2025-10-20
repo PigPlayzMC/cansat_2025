@@ -1,3 +1,7 @@
+.hidden {
+    display: none;
+}
+
 .header {
     position: absolute;
     height: 90px;
@@ -58,4 +62,36 @@ a:hover {
     border-style: dashed;
     border-top: 1px;
     border-bottom: 1px;
+}
+
+.posts_loading {
+    display: block;
+}
+
+.post {
+    display: flex;
+    color:black !important;
+    background-color: white !important;
+    border: 0px;
+    border-bottom: 1px;
+    border-style: inset;
+}
+
+.post_thumbnail {
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+    padding-top: 3px;
+}
+
+.post_text {
+    padding-left: 5px;
+}
+
+.post_title {
+    font: bold;
+}
+
+.post_description {
+
 }

@@ -1,6 +1,6 @@
 # Todo list
 
-This is a todo list.
+This is a todo list. Please tag yourself in assigned items to ensure efficiency.
 
 ## Website
 
@@ -12,6 +12,7 @@ This is a todo list.
 - Footer
 - Creation of posts page
 - Get posts from server [@PigPlayzMC]
+- Fix issue where title is 100vw rather than 100% actual displayed area, exaccerbating scrollbar issue [@PigPlayzMC]
 
 ## Server ()
 

@@ -1,0 +1,10 @@
+[
+    {
+        "post_id": "0000",
+        "title": "Fetched post",
+        "thumbnail": "default.svg",
+        "description": "255 chars of goodness",
+        "content": "Even more characters! wow.",
+        "date_created": "00/00/0000"
+    }
+]
