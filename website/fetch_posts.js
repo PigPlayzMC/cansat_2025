@@ -89,7 +89,7 @@ function formatPostsHome(id_minimum, id_maximum, posts) {
 
         const link_wrapper = document.createElement("a");
         link_wrapper.href = "post.html"; //TODO link to a page with the actual post.
-        link_wrapper.className = "post";
+        link_wrapper.className = "post_a";
 
         const image_wrapper = document.createElement("div");
         image_wrapper.className = "post_thumbnail";

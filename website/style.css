@@ -74,7 +74,14 @@ a:hover {
     background-color: white !important;
     border: 0px;
     border-bottom: 1px;
-    border-style: inset;
+    border-style: outset;
+}
+
+.post_a {
+    display: flex;
+    color:black !important;
+    background-color: white !important;
+    border: 0px;
 }
 
 .post_thumbnail {
@@ -86,6 +93,8 @@ a:hover {
 
 .post_text {
     padding-left: 5px;
+    width: 44vw; /* Ensures that all of the post is clickable as a link */
+    border: none;
 }
 
 .post_title {
@@ -93,5 +102,5 @@ a:hover {
 }
 
 .post_description {
-
+    border: none;
 }
