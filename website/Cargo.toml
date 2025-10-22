@@ -2,6 +2,3 @@
 name = "webserver"
 version = "0.1.0"
 edition = "2021"
-
-[dependencies]
-hyper = "1.7.0"
