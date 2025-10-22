@@ -11,6 +11,9 @@ const capital_regex = /[A-Z]/;
 const number_regex = /[0-9]/;
 const symbol_regex = /[^A-Za-z0-9]/; // Please do not use random unicode characters, I am begging. Special symbols like ! not 👼 please.
 
+// For posting
+const url = "127.0.0.1:5500";
+
 // Cryptography
 async function hashString(string) {
     const encoder = new TextEncoder();
@@ -57,7 +60,35 @@ function verifyPassword(password) {
     if (!symbol_regex.test(password)) {
         console.log("Password fail - No symbols");
     };
-}
+};
+
+async function postUsernamePassword(hashedUsername, hashedPassword, url) {
+    let currentTime = new Date().getTime();
+    let protocol = "http://";
+
+    try {
+        const response = await fetch(protocol + url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                user: hashedUsername,
+                pass: hashedPassword,
+                time: currentTime,
+            }),
+        });
+
+        if (!response.ok) {
+            console.error("Server responded with status: {}", response.status);
+        } else {
+            const responseData = await response.text();
+            console.log("Response from server: ", responseData);
+        }
+    } catch (error) {
+        console.error("Error verifying credentials: ", error);
+    }
+};
 
 async function getUsernamePassword() {
     const username = (username_text.value).toLowerCase();
@@ -66,8 +97,6 @@ async function getUsernamePassword() {
     ////console.log(username + " - " + password);
     // Ensure email is valid, to avoid wasting server time.
     if (verifyEmail(username)) { // Note to self: try call the function properly BEFORE you start trying to fix it.
-        console.log("Email matches RegEx filter.");
-
         // Hash username and password
         const hashedUsername = await hashString(username);
         const hashedPassword = await hashString(password);
@@ -76,6 +105,7 @@ async function getUsernamePassword() {
         ////console.log(hashedUsername + " - " + hashedPassword);
 
         // Now post the username and password for serverside verification.
+        postUsernamePassword(hashedUsername, hashedPassword, url);
     } else {
         alert("Please enter a valid email adress.");
     };
@@ -89,7 +119,7 @@ submit_button.addEventListener("click", function(e) {
 TODO:
 
 - Authenticate team members
-    - Hash uname and pwd for transmit
+    - Hash uname and pwd for transmit {tick!}
     - username and password check
 - Check authentication on post
 - Issue session/token (in requests)
