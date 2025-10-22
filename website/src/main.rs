@@ -1,89 +1,109 @@
-use std::{
-    fs,
-    io::{BufRead, BufReader, Read, Write},
-    net::{TcpListener, TcpStream}
-};
+use std::fs;
+use tiny_http::{Server, Request, Method, Response, Header};
+use serde::Deserialize;
 
-fn main() {
-    let listener: TcpListener = TcpListener::bind("127.0.0.1:5500").unwrap();
-    
-    println!("Server operational and ready to accept requests.");
-    for stream in listener.incoming() {
-        let stream: TcpStream = stream.unwrap();
-
-        handle_connections(stream);
-    };
+#[derive(Deserialize, Debug)]
+struct Credentials {
+    user: String,
+    pass: String,
+    time: Option<u64>,
 }
 
-fn handle_connections(mut stream: TcpStream) {
-    let mut buf_reader: BufReader<&mut TcpStream> = BufReader::new(&mut stream);
-    let mut request_line: String = String::new();
+fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let url: &'static str = "127.0.0.1:5500";
+    let server: Server = Server::http(url)?;
+    println!("Server connection open!");
 
-    if buf_reader.read_line(&mut request_line).is_ok() {
-        let request_line: &str = request_line.trim();
-        println!("NEW request: {}", request_line);
+    //TODO Check for credentials.json
 
-        if request_line.starts_with("GET") {
-            let parts: Vec<&str> = request_line.split_whitespace().collect();
-            handle_get_requests(&mut stream, parts[1]);
-        } else if request_line.starts_with("POST") {
-            handle_post_request(&mut stream);
-        } else { // Deny all non GET or POST requests, such as trace and put. We only do the bare minimum here!
-            println!("ERROR 405: HTTP method {} received. This is not supported.", request_line);
-            let response: String = format!(
-                "HTTP/1.1 405 Method Not Allowed\r\nContent-Length: 0\r\nAllow: {}\r\n\r\n",
-                "GET, POST"
-            );
-        
-            stream.write_all(response.as_bytes()).unwrap();
+    //TODO check for 
+    
+    println!("Server at http://{} - Fully operational!", url);
+
+    for request in server.incoming_requests() {
+        let _ = handle_requests(request);
+    }
+
+    Ok(())
+}
+
+fn handle_requests(request: Request) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    match *request.method() {
+        Method::Get => handle_get(request),
+        Method::Post => handle_post(request),
+        _ => {
+            let mut resp = Response::empty(405);
+            resp.add_header(Header::from_bytes(&b"Allow"[..], &b"GET, POST"[..]).unwrap());
+            request.respond(resp);
+            Ok(())
         }
     }
 }
 
-fn handle_get_requests(stream: &mut TcpStream, request_path: &str) {
-    let file_path: String = if request_path == "/" { // Catch wrong requests and redirect rather than serving an error
-        "home.html".to_string()
-    } else {
-        request_path.trim_start_matches('/').to_string()
+fn handle_get(mut request: Request) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let path = request.url();
+    let file_path = if path == "/" { "home.html".to_string() } else {
+        path.trim_start_matches('/').to_string()
     };
 
-    ////println!("File path = {}", file_path);
-    let mut_file_path: String = file_path.clone();
-    let file: String = mut_file_path.replace("website/", "");
-    let content: String = fs::read_to_string(file).unwrap_or_else(|_| {
-        String::from("<h1>404 Not Found</h1>")
-    });
+    let file_name = file_path.replace("website/", "");
+    let content = fs::read_to_string(&file_name).unwrap_or_else(|_| "<h1>404 Not Found</h1>".to_string());
 
-    // Get file type
-    let content_type: &'static str = if file_path.ends_with(".html") {
+    // guess content-type (kept similar to your original)
+    let content_type = if file_name.ends_with(".html") {
         "text/html"
-    } else if file_path.ends_with(".css") {
+    } else if file_name.ends_with(".css") {
         "text/css"
-    } else if file_path.ends_with(".js") {
+    } else if file_name.ends_with(".js") {
         "application/javascript"
-    } else if file_path.ends_with(".svg") || file_path.ends_with(".xml") {
+    } else if file_name.ends_with(".svg") || file_name.ends_with(".xml") {
         "image/svg+xml"
-    } else if file_path.ends_with(".jpeg") || file_path.ends_with(".jpg") {
-        "image/jpeg" // Do not use jpg, this is a safety catch just in case
-    } else if file_path.ends_with(".ico") {
-        "image/ico" //TODO Test
-    } else if file_path.ends_with(".json") {
+    } else if file_name.ends_with(".jpeg") || file_name.ends_with(".jpg") {
+        "image/jpeg" // Do not use .jpg please, to avoid confusion.
+    } else if file_name.ends_with(".ico") {
+        "image/ico"
+    } else if file_name.ends_with(".json") {
         "application/json"
     } else {
         "text/plain"
     };
-    ////println!("Content Type = {}", content_type);
-    
-    let response: String = format!(
-        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nContent-Type: {}\r\n\r\n{}",
-        content.len(),
-        content_type,
-        content
-    );
 
-    stream.write_all(response.as_bytes()).unwrap();
+    let mut response = Response::from_string(content);
+    response.add_header(Header::from_bytes(&b"Content-Type"[..], content_type.as_bytes()).unwrap());
+    response.add_header(Header::from_bytes(&b"Access-Control-Allow-Origin"[..], &b"*"[..]).unwrap()); // useful for local frontend testing
+    request.respond(response)?;
+    Ok(())
 }
 
-fn handle_post_request(stream: &mut TcpStream) {
-    
+fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    // Read the entire body (tiny_http gives a reader for body)
+    let mut buf = Vec::new();
+    request.as_reader().read_to_end(&mut buf)?;
+
+    // Try to parse JSON body into Credentials
+    match serde_json::from_slice::<Credentials>(&buf) {
+        Ok(creds) => {
+            println!("Received credentials: {:?}", creds);
+
+            // TODO verify from json file
+
+            // TODO Record login attempt and status
+        
+            // TODO give token for posting rights
+            let mut resp: Response<std::io::Cursor<Vec<u8>>> = Response::from_string("OK");
+            resp.add_header(Header::from_bytes(&b"Content-Type"[..], &b"text/plain"[..]).unwrap());
+            resp.add_header(Header::from_bytes(&b"Access-Control-Allow-Origin"[..], &b"*"[..]).unwrap());
+            request.respond(resp)?;
+        }
+        Err(err) => {
+            eprintln!("Failed to parse POST JSON: {}", err);
+            let mut resp: Response<std::io::Cursor<Vec<u8>>> = Response::from_string("Bad Request");
+            resp = resp.with_status_code(400);
+            resp.add_header(Header::from_bytes(&b"Content-Type"[..], &b"text/plain"[..]).unwrap());
+            resp.add_header(Header::from_bytes(&b"Access-Control-Allow-Origin"[..], &b"*"[..]).unwrap());
+            request.respond(resp)?;
+        }
+    }
+
+    Ok(())
 }
