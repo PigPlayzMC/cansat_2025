@@ -99,7 +99,7 @@ async function getUsernamePassword() {
     if (verifyEmail(username)) { // Note to self: try call the function properly BEFORE you start trying to fix it.
         // Hash username and password
         const hashedUsername = await hashString(username);
-        const hashedPassword = await hashString(password);
+        const hashedPassword = await hashString(password); // Kind of pointless as HTTPS is superior and this does nothing but its a feature!
 
         // AND THIS [although not really required as it is now hashed]
         ////console.log(hashedUsername + " - " + hashedPassword);
@@ -121,6 +121,7 @@ TODO:
 - Authenticate team members
     - Hash uname and pwd for transmit {tick!}
     - username and password check
+    - Server side salting {?}
 - Check authentication on post
 - Issue session/token (in requests)
 */
