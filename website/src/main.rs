@@ -70,7 +70,7 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("Server at http://{} - Fully operational!", url);
 
     println!("Attempting to create example credentials...");
-    let _ = new_credentials("email".to_string(), "password".to_string());
+    ////let _ = new_credentials("charliehbird@gmail.com".to_string(), "password".to_string());
     println!("Example credentials created!");
 
     for request in server.incoming_requests() {
@@ -163,9 +163,9 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
             };
 
             if let Some(array) = parsed_credentials.as_array() {
-                if let Some(obj) = array.iter().find(|item| item["hashed_username"] == credentials.user) {
-                    if let Some(username) = obj.get("hashed_username").and_then(|v| v.as_str()) 
-                        && let Some(password) = obj.get("double_hashed_password").and_then(|v| v.as_str())
+                if let Some(obj) = array.iter().find(|item| item["user"] == credentials.user) {
+                    if let Some(username) = obj.get("user").and_then(|v| v.as_str()) 
+                        && let Some(password) = obj.get("pass").and_then(|v| v.as_str())
                         && let Some(uuid) = obj.get("uuid").and_then(|v| v.as_str())
                     { // Assume this will always be true as it was parsed as proper JSON earlier.
                         actual_credentials = TrueCredentials {
@@ -183,6 +183,7 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
             }
 
             // Convert string uuid to real uuid
+            println!("UUID: {}", actual_credentials.uuid);
             let uuid: Uuid = Uuid::parse_str(&actual_credentials.uuid).unwrap(); // Assume valid because I did it
             let salt_bytes: &[u8; 16] = uuid.as_bytes();
 
@@ -211,7 +212,7 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
             }
 
             // Record login attempt and status
-            let log: String = state.to_string() + &actual_credentials.user + " " + &credentials.pass;
+            let log: String = state.to_string() + &actual_credentials.user + " " + &credentials.pass + "\r\n";
             let _ = fs::OpenOptions::new().append(true).create(true).open("access.txt")?.write_all(log.as_bytes());
         
             if accepted {
@@ -242,6 +243,7 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
     Ok(())
 }
 
+#[allow(dead_code)] // Because this is a very useful debug function that I'm not commenting out
 fn new_credentials(email: String, password: String, ) -> Result<TrueCredentials, Box<dyn std::error::Error>> {
     let hashed_email = hash_string(email);
     let once_hashed_password = hash_string(password);
@@ -284,6 +286,7 @@ fn new_credentials(email: String, password: String, ) -> Result<TrueCredentials,
     Ok(new_credentials)
 }
 
+#[allow(dead_code)]
 fn hash_string(string: String) -> String {
     let mut hasher = Sha256::new();
     hasher.update(string.as_bytes());
