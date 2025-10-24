@@ -1,0 +1,6 @@
+[{
+  "token": "uuid v4",
+  "user": "hashed_email",
+  "time_done": "seconds from epoch",
+  "expires": "time_done + 30 minutes"
+}]
