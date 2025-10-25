@@ -8,3 +8,4 @@ website/target
 website/credentials.json
 website/access.txt
 website/tokens_granted.json
+website/posts/posts.json

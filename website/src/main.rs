@@ -1,4 +1,10 @@
-use std::{fs::{self, File}, io::Write};
+use std::{
+    fs::{
+        self,
+        File
+    },
+    io::Write
+};
 use serde_json::Value;
 use tiny_http::{
     Server,
@@ -11,6 +17,7 @@ use serde::{
     Deserialize,
     Serialize,
 };
+use chrono::{Duration, Utc};
 
 // Security only
 use uuid::Uuid;
@@ -28,7 +35,7 @@ use sha2::{
 struct Credentials {
     user: String,
     pass: String,
-    time: Option<u64>, // For logging authentication attempts NOT for uuids
+    time: Option<u64>, // For logging authentication attempts NOT for uuids (uuids are random because I used v4 by accident instead of v7)
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -38,6 +45,15 @@ struct TrueCredentials {
     uuid: String
 }
 
+#[derive(Serialize)]
+struct TokenLog {
+    token: String,
+    user: String,
+    time_done: String,
+    expires: String
+}
+
+// At some point this broke Live Server's auto reload function so just open like normal, run the server, then manually reload
 fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let url: &'static str = "127.0.0.1:5500";
     let server: Server = Server::http(url)?;
@@ -65,13 +81,14 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         eprintln!("ERROR: Access log not found. Creating now...");
         let _ = File::create("access.txt").unwrap(); // Assume this won't fail, because that would be bad and I am always an optimist.
     }
+    println!("Successfully opened access.txt");
     drop(access_log); // Only used to ensure the log exists BEFORE it is needed in logging a log in (yeah that sounds weird change later...)
 
     println!("Server at http://{} - Fully operational!", url);
 
-    println!("Attempting to create example credentials...");
+    ////println!("Attempting to create example credentials...");
     ////let _ = new_credentials("charliehbird@gmail.com".to_string(), "password".to_string());
-    println!("Example credentials created!");
+    ////println!("Example credentials created!");
 
     for request in server.incoming_requests() {
         let _ = handle_requests(request);
@@ -153,7 +170,8 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
                 time: (creds.time)
             };
 
-            credentials.pass = credentials.pass;
+            //TODO Uncover secret meaning behind this because, as a genius, I never do random stuff, just forget my masterstrokes.
+            credentials.pass = credentials.pass; // ?? Whjat is this forr??
 
             // Find account to sign into
             let mut actual_credentials = TrueCredentials {
@@ -162,6 +180,7 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
                 uuid: "default".to_string(),
             };
 
+            let mut valid: bool = false; // Whether the username exists
             if let Some(array) = parsed_credentials.as_array() {
                 if let Some(obj) = array.iter().find(|item| item["user"] == credentials.user) {
                     if let Some(username) = obj.get("user").and_then(|v| v.as_str()) 
@@ -176,62 +195,67 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
                     } else {
                         panic!("ERROR: Incorrect JSON?");
                     }
+                    valid = true;
                 } else {
-                    // Username is not registered
-                    // Return 
+                    valid = false;
                 }
             }
 
-            // Convert string uuid to real uuid
-            println!("UUID: {}", actual_credentials.uuid);
-            let uuid: Uuid = Uuid::parse_str(&actual_credentials.uuid).unwrap(); // Assume valid because I did it
-            let salt_bytes: &[u8; 16] = uuid.as_bytes();
-
-            // Rehash password with salt (uuid)
-            let salt: SaltString = SaltString::encode_b64(salt_bytes)?; // Assume no errors again :/
-
-            let argon2: Argon2<'_> = Argon2::default(); // This is the recommended setting from OWASP
-
-            let double_password_hash: String = argon2
-                .hash_password(credentials.pass.as_bytes(), &salt)?
-                .to_string()
-                .replace("$argon2id$v=19$m=19456,t=2,p=1$", "")
-                .replace("$", "");
-
-            // Check whether these VERY VERY processed credentials actually justify any of the HOURS of work
             let state: &'static str;
             let accepted: bool;
-            if double_password_hash == actual_credentials.pass {
-                println!("LOGIN: Success! User {} logged in.", actual_credentials.user); // This uses actual credentials to avoid compiler flipout
-                state = "SUCCESS: "; // There is a more efficient way to do this
-                accepted = true;
+            if valid {
+                // Convert string uuid to real uuid
+                ////println!("UUID: {}", actual_credentials.uuid);
+                let uuid: Uuid = Uuid::parse_str(&actual_credentials.uuid).unwrap(); // Assume valid because I did it
+                let salt_bytes: &[u8; 16] = uuid.as_bytes();
+
+                // Rehash password with salt (uuid)
+                let salt: SaltString = SaltString::encode_b64(salt_bytes)?; // Assume no errors again :/
+
+                let argon2: Argon2<'_> = Argon2::default(); // This is the recommended setting from OWASP
+
+                let double_password_hash: String = argon2
+                    .hash_password(credentials.pass.as_bytes(), &salt)?
+                    .to_string()
+                    .replace("$argon2id$v=19$m=19456,t=2,p=1$", "")
+                    .replace("$", "");
+
+                // Check whether these VERY VERY processed credentials actually justify any of the HOURS of work
+                if double_password_hash == actual_credentials.pass {
+                    println!("LOGIN: Success! User {} logged in.", actual_credentials.user); // This uses actual credentials to avoid compiler flipout
+                    state = "SUCCESS: "; // There is a more efficient way to do this
+                    accepted = true;
+                } else {
+                    println!("LOGIN: Fail! Incorrect password for user {}.", actual_credentials.user);
+                    state = "FAIL: "; // And here
+                    accepted = false;
+                }
             } else {
-                println!("LOGIN: Fail! Incorrect password for user {}.", actual_credentials.user);
-                state = "FAIL: "; // And here
+                println!("LOGIN: FAIL! No such user {}", credentials.user);
+                state = "FAIL: ";
                 accepted = false;
             }
+            
 
             // Record login attempt and status
-            let log: String = state.to_string() + &actual_credentials.user + " " + &credentials.pass + "\r\n";
+            let log: String = state.to_string() + &credentials.user + " " + &credentials.pass + "\r\n"; // Logs to new line
+            // Has to be credentials.user or falsely credentialed logins would be wrong
             let _ = fs::OpenOptions::new().append(true).create(true).open("access.txt")?.write_all(log.as_bytes());
         
             if accepted {
-                //TODO Generate random token
+                let token: String = generate_token(credentials.user);
 
-                // TODO Encrypt random token
-
-                // TODO Transmit random token
-                let mut resp: Response<std::io::Cursor<Vec<u8>>> = Response::from_string("OK");
+                let mut resp: Response<std::io::Cursor<Vec<u8>>> = Response::from_string(token);
                 resp.add_header(Header::from_bytes(&b"Content-Type"[..], &b"text/plain"[..]).unwrap());
                 resp.add_header(Header::from_bytes(&b"Access-Control-Allow-Origin"[..], &b"*"[..]).unwrap());
                 request.respond(resp)?;
-            } else {
+            } else { // Either wrong password or wrong username (Both can't happen because a false username doesn't have a password)
                 let resp = Response::empty(403); // Not allowed!!!
                 let _ = request.respond(resp);
             }
         }
         Err(err) => {
-            eprintln!("Failed to parse POST JSON: {}", err);
+            eprintln!("ERROR: Failed to parse POST JSON: {}", err);
             let mut resp: Response<std::io::Cursor<Vec<u8>>> = Response::from_string("Bad Request");
             resp = resp.with_status_code(400);
             resp.add_header(Header::from_bytes(&b"Content-Type"[..], &b"text/plain"[..]).unwrap());
@@ -270,7 +294,7 @@ fn new_credentials(email: String, password: String, ) -> Result<TrueCredentials,
         pass: double_password_hash,
     };
 
-    // TODO Write new credentials
+    //Write new credentials
     let json_credentials: String = serde_json::to_string_pretty(&new_credentials).unwrap(); // So ✨pretty✨✨! (Not AI, just cringe)
 
     // Open credentials.json
@@ -286,11 +310,46 @@ fn new_credentials(email: String, password: String, ) -> Result<TrueCredentials,
     Ok(new_credentials)
 }
 
-#[allow(dead_code)]
+// Allow dead code is inherited for this as the compiler pretends it is called in new_credentials despite that not running!
 fn hash_string(string: String) -> String {
     let mut hasher = Sha256::new();
     hasher.update(string.as_bytes());
     let result = hasher.finalize();
 
     return hex::encode(result)
+}
+
+fn generate_token(user: String) -> String {
+    // Using v4 uuid again
+    let token: Uuid = Uuid::new_v4(); // New random uuid of 16 bytes
+    let token_string: String = token.to_string(); // Stwing!
+
+    // Create log of token generated, user3 authed, time done, time expires (time gened + 30m)
+    let now: chrono::DateTime<Utc> = Utc::now();
+    let time: i64 = now.timestamp();
+    let expiry: i64 = (now + Duration::minutes(30)).timestamp(); // 30 minutes to make a post should be fine but copy paste was invented for a reason
+
+    let token_log: TokenLog = TokenLog {
+        token: (token_string),
+        user: (user),
+        time_done: (time.to_string()),
+        expires: (expiry.to_string())
+    };
+
+    let json_token: String = serde_json::to_string_pretty(&token_log).unwrap(); // So ✨pretty✨✨! (Not AI, just cringe)
+
+    // Open credentials.json
+    // DO NOT CONFUSE WITH token_string AS THIS WILL ____ UP THE DATA
+    let mut tokens_string: String = fs::read_to_string("tokens_granted.json").unwrap(); // Will be fine as the initial check passed
+    tokens_string = tokens_string.replace("]", "").trim_end().to_string(); // Remove last char
+
+    // Add new creds
+    tokens_string = tokens_string + "," + &json_token + "]"; // Will always be right to add a comma because of the example
+
+    // Rewrite file (this destroys the original data but is required)
+    let _ = fs::write("tokens_granted.json", tokens_string);
+
+    // Not bothering to encrypt, a token is fine
+
+    return token_log.token;
 }

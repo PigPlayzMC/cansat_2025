@@ -3,13 +3,22 @@ const submit_button = document.getElementById("submit_button");
 const username_text = document.getElementById("username_box"); // This is actually an email, for simplicity
 const password_text = document.getElementById("password_box");
 
+const security = document.getElementById("security");
+const post_maker = document.getElementById("post_maker");
+
+// ! Deprecated, do not use
+////const description_box = document.getElementById("description_box");
+////const content_box = document.getElementById("content_box");
+
+const auth = true; // DEBUG ONLY PLEASE!!!!
+
 // regexs
 // VV Valid for RFC 5322 VV
 const email_regex = /(?:[a-z0-9!#$%&'*+\x2f=?^_`\x7b-\x7d~\x2d]+(?:\.[a-z0-9!#$%&'*+\x2f=?^_`\x7b-\x7d~\x2d]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9\x2d]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9\x2d]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9\x2d]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/
 const letter_regex = /[a-zA-Z]/;
 const capital_regex = /[A-Z]/;
 const number_regex = /[0-9]/;
-const symbol_regex = /[^A-Za-z0-9]/; // Please do not use random unicode characters, I am begging. Special symbols like ! not 👼 please.
+const symbol_regex = /[^A-Za-z0-9]/; // Please do not use random unicode characters, I am begging. Special symbols like ! not 👼 please. Genuinely don't know if Argon2 can take it but I don't want to find out...
 
 // For posting
 const url = "127.0.0.1:5500";
@@ -64,7 +73,7 @@ function verifyPassword(password) {
 
 async function postUsernamePassword(hashedUsername, hashedPassword, url) {
     let currentTime = new Date().getTime();
-    let protocol = "http://";
+    let protocol = "http://"; // Change with cert?
 
     try {
         const response = await fetch(protocol + url, {
@@ -81,9 +90,18 @@ async function postUsernamePassword(hashedUsername, hashedPassword, url) {
 
         if (!response.ok) {
             console.error("Server responded with status: {}", response.status);
+            alert("Invalid credentials. Please try again. WARNING: Repeated incorrect attempts may result in rate limiting.")
+            // ^^ Rate limiting: Not yet implemented
+            // TODO Rate limiting
         } else {
             const responseData = await response.text();
-            console.log("Response from server: ", responseData);
+            console.log("Response from server: ", responseData); // This is our token!
+
+            console.log("Token received!");
+            localStorage.clear(); // Get rid of any previous token that may exist (NOTE: This only affects this site, other storage is fine dw)
+            localStorage.setItem("Token", responseData);
+
+
         }
     } catch (error) {
         console.error("Error verifying credentials: ", error);
@@ -111,17 +129,27 @@ async function getUsernamePassword() {
     };
 };
 
+function formatTeamOnly() { // Also vulnerable to script injection probably
+    /*
+    This is a convinience feature NOT a security feature. Access granting can only ever happen on a server side.
+    Everything else is assumed tampered with by either inspect element or malicious request creation. This simply
+    doesn't let people write a post without logging in previously (in theory). Someone will probably feel special
+    and like they hacked us right up until the time they have to submit the post and they don't have a token, or
+    they have the wrong token and the server rejects it.
+    */
+    security.style.display = "none";
+    post_maker.style.display = "flex"; // I ❤️ flexbox (also this is a unicode heart?)
+
+    ////description_box.innerText = "";
+    ////content_box.innerText = "";
+}
+
 submit_button.addEventListener("click", function(e) {
     getUsernamePassword();
 });
 
-/*
-TODO:
-
-- Authenticate team members
-    - Hash uname and pwd for transmit {tick!}
-    - username and password check
-    - Server side salting {?}
-- Check authentication on post
-- Issue session/token (in requests)
-*/
+if (auth) { // Just comment this out when its not needed tbh
+    // DEBUG
+    console.error("DEBUG FEATURE LEFT ON!!! CEASE PRODUCTION USE IMMEDIATELY");
+    formatTeamOnly();
+}
