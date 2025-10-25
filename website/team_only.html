@@ -39,16 +39,43 @@
         </div>
 
         <div id="post_maker" class="post_maker">
-            <div id="explainer">
-                Tutorial here!
+            <div id="explainer" class="explainer">
+                <b>Overview:</b><br>
+                Welcome to the bespoke post maker, which allows which allows even the least technical of the outreach team
+                to seamlessly create beautiful standardised posts (or something like that).<br>
+                NOTE: All fields are required and the post will not upload without all.<br>
+                NOTE: From login, you have 30 minutes to complete your post before the credentials expire. For this reason, it is 
+                recommended to draft posts in a seperate text editor such as LibreOffice, Docs, or Word (in order of preference).
+                <br><br>
+                <b>Title:</b><br>
+                Very simply, just type the desired title of the post into the box labelled title.
+                <br><br>
+                <b>Content:</b><br>
+                This is the main text of the post which appears beneath the title when the post has been clicked, and is being 
+                displayed. Here (and only here), square brackets, [], can be used in conjunction with a string to represent an image, such as [image.png], 
+                or [1.jpeg]. These will be uploaded later, so please ensure you remember the file names correctly when adding images. 
+                Trying to upload content with image tags that cannot be fulfilled (because the needed files have not been uploaded) 
+                will result in an error, not allowing upload to continue.
+                <br><br>
+                <b>Description:</b><br>
+                This is what users will see when your post is published and on the home page. This field is character limited to 255 
+                characters to keep things standardised and punchy. This should summarise what is discussed in your main content. 
+                Image tags cannot be used.
+                <br><br>
+                <b>File upload:</b><br>
+                This is where the images found in the image tags from earlier can be uploaded, in a folder. This folder must contain all 
+                images used in the content image tags <b>and</b> a thumbnail image with; <br>
+                &emsp;&emsp;&emsp;&emsp;- a 1:1 aspect ratio (it is as wide as it is high)<br>
+                &emsp;&emsp;&emsp;&emsp;- the name thumbnail.{file extension (png, jpeg, etc)}<br>
+                <!-- ^^ Looks a mess but works -->
             </div>
 
             <div id="title_setting">
-
+                <input type="text" placeholder="Title" class="title_box" id="title_box">
             </div>
 
-            <div id="post_setting">
-                <!-- TODO image code-->
+            <div id="content_setting">
+                <!-- TODO image code used here : I *will* trick the non-technical people into using html one way or another-->
             </div>
 
             <div id="description_setting">

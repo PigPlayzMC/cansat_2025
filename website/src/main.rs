@@ -1,3 +1,5 @@
+#[forbid(unsafe_code)] // It's against the spirit of the language (and totally unneeded here)
+
 use std::{
     fs::{
         self,

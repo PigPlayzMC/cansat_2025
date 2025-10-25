@@ -122,22 +122,11 @@ a:hover {
     margin-right: auto;
 }
 
+.explainer {
+    font-family:Verdana, Geneva, Tahoma, sans-serif;
+}
+
 .title_box {
     max-width: 80vw;
     height: 20px;
-}
-
-.upload_flex {
-    display: flex;
-    flex-direction: row;
-}
-
-.thumbnail_upload {
-    margin: 0px;
-    margin-right: 40px;
-}
-
-.upload_post_button {
-    margin: 0px;
-    margin-top: 20px;
 }
