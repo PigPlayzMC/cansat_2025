@@ -126,11 +126,13 @@ fn handle_get(request: Request) -> Result<(), Box<dyn std::error::Error + Send +
     } else if file_name.ends_with(".css") {
         "text/css"
     } else if file_name.ends_with(".js") {
-        "application/javascript"
+        "text/javascript"
     } else if file_name.ends_with(".svg") || file_name.ends_with(".xml") {
         "image/svg+xml"
     } else if file_name.ends_with(".jpeg") || file_name.ends_with(".jpg") {
-        "image/jpeg" // Do not use .jpg please, to avoid confusion.
+        "image/jpeg" // Ignore previous comment. Don't use whatever an xml is
+    } else if file_name.ends_with(".png") {
+        "image/png"
     } else if file_name.ends_with(".ico") {
         "image/ico"
     } else if file_name.ends_with(".json") {
