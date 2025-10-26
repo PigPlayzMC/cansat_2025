@@ -1,12 +1,15 @@
 // This file probably needs a better name
 const post_button = document.getElementById("post_button");
 
-const file_type_regex = /\.jpeg|\.png|\.jpg|\.svg/
+const file_type_regex = /\.jpeg|\.png|\.jpg|\.svg/;
 // ^^ There's server side support for xml so it may as well be a valid option.
-const image_tag_regex = /\[.+\.(jpeg|png|jpg|svg)]/
+const image_tag_regex = /\[.+\.(jpeg|png|jpg|svg)]/;
 // ^^ [ + any+1 length of any characters + . + any valid file extension + ]
 // Requring all of this to be fulfilled reduces the chance of false positives
 // I have just learnt what an XML is and no. Not an image; not invited.
+const jpeg_jpg_regex = /\.jpeg\.jpg/;
+const png_regex = /\.png/;
+const svg_regex = /\.svg/;
 
 // Attributes
 //TODO constant document references
@@ -18,6 +21,9 @@ const image_folder = document.getElementById("image_file");
 let title_text;
 let content_text;
 let description_text;
+
+const protocol = "http://";
+const url1 = "127.0.0.1:5500";
 
 post_button.addEventListener("click", function(e) {
     getPostAttributes();
@@ -32,7 +38,7 @@ function getPostAttributes() {
     if (validateTexts() && validateImages()) {
         let json_text = jsonifyText();
 
-        postNewPost(json_text);
+        postNewPost(json_text, images_required);
     } else {
         console.error("ERROR: Text and/or image checks failed - Upload cancelled");
         alert("Text and/or image criteria unfulfilled. Please try again.");
@@ -109,7 +115,7 @@ function validateImages() { // Returns bool
     // Find image tags
     images_required = collectImageTags(); // This is an array [ should have used Typescript :( ]
 
-    // TODO CRITICAL: Check all images are actually images. Without, anything could be uploaded!
+    // CRITICAL: Check all images are actually images. Without, anything could be uploaded! (Like CPP or Rust)
     // TODO Also have server side verifcation for this
     iter = 0;
     while (iter < images_required.length) {
@@ -214,17 +220,71 @@ function jsonifyText() { // Returns JSON object
     return(text_json);
 };
 
-function postNewPost() {
-    // TODO Post request for json of text
+async function postNewPost(json_text, images_required) {
+    // Post request for json of text
+    try {
+        const token = localStorage.getItem("Token");
 
-    // TODO Compress all images
-    compressImage();
+        const text_response = await fetch(protocol + url1, { 
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: json_text,
+        });
+
+        if (!text_response.ok) {
+            console.error("Server responded with status: {}", text_response.status);
+            if (text_response.status == 403) {
+                alert("Invalid token. Please copy work then reload to log in again.");
+            };
+            return false
+        } else {
+            console.log("Text content posted!");
+        };
+    } catch {
+        console.error("Failed to post text contents");
+        return false
+    };
+
+    // Not compressing images. Good luck backend!
 
     // TODO Post requests for each image
+    iter = 0;
+    let content_type;
+    let index = 0;
+    while (iter < images_required.length) {
+        const form_data = new FormData; // Because I didn't use a form element
+
+        let iter2 = 0;
+        while (iter2 < image_folder.files.length) {
+            if (image_folder.files[iter2].name == images_required[iter]) {
+                form_data.append("image", image_folder.files[iter2]);
+                break
+            };
+        };
+
+        const image_response = await fetch(protocol + url1, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${token}`
+            },
+            body: form_data
+        });
+
+        if (!image_response.ok) {
+            console.error("Server responded with status: {}", image_response.status);
+            if (image_response.status == 403) {
+                alert("Invalid token. Please copy work then reload to log in again.");
+            };
+            return false
+        } else {
+            console.log("Image content posted: " + (iter+1) + "/" + images_required.length);
+        };
+
+        iter += 1; // Very important. My apologies to the countless Firefox instances killed due to these issues.
+    };
 
     // TODO Return response
 };
-
-function compressImage() { // Returns lossless compressed image
-
-}

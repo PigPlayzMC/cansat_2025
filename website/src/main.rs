@@ -142,7 +142,7 @@ fn handle_get(request: Request) -> Result<(), Box<dyn std::error::Error + Send +
     };
 
     // VV Salts.json not in use (or existence) consider removal
-    if file_name.ends_with("salts.json") || file_name.ends_with("credentials.json") || file_name.ends_with("posts.json") { // Maybe not for transmission, even if they ask nicely
+    if file_name.ends_with("salts.json") || file_name.ends_with("credentials.json") { // Maybe not for transmission, even if they ask nicely
         println!("Attempted access to restricted files");
         let resp = Response::empty(403); // Could send 404 to obscure existence but this is open source
         let _ = request.respond(resp);
@@ -160,6 +160,11 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
     request.as_reader().read_to_end(&mut buf)?;
 
     // TODO determine post request purpose (register credentials, verify credentials, create post)
+    if let Some(header) = request.headers().iter().find(|h| h.field.equiv("Authorization")) {
+        println!("Authorisation token located: {}", header.value);
+    } else {
+        println!("No authorisation token located. Sign in process begun.");
+    }
 
     // open credentials.json
     let raw_credentials: String = fs::read_to_string("credentials.json").unwrap(); // Won't fail, its already passed the initial check

@@ -114,7 +114,7 @@ async function getUsernamePassword() {
 
     ////console.log(username + " - " + password);
     // Ensure email is valid, to avoid wasting server time.
-    if (verifyEmail(username)) { // Note to self: try call the function properly BEFORE you start trying to fix it.
+    if (verifyEmail(username)) { // Note to self: try calling the function properly BEFORE you start trying to fix it.
         // Hash username and password
         const hashedUsername = await hashString(username);
         const hashedPassword = await hashString(password); // Kind of pointless as HTTPS is superior and this does nothing but its a feature!
@@ -152,4 +152,5 @@ if (auth) { // Just comment this out when its not needed tbh
     // DEBUG
     console.error("DEBUG FEATURE LEFT ON!!! CEASE PRODUCTION USE IMMEDIATELY");
     formatTeamOnly();
+    localStorage.setItem("Token", "778a867a-08b8-44de-8c3e-0f96c5662a68");
 }
