@@ -167,8 +167,18 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
     let mut buf: Vec<u8> = Vec::new(); // This is empty body attribute!!
     request.as_reader().read_to_end(&mut buf)?; // This is request body!!
 
+    let content_type: String  = request
+        .headers() // The meta data
+        .iter() // for _ in ___
+        .find(|h| h.field.equiv("Content-Type")) // Where the data is about content-type
+        .unwrap() // Do the operation
+        .to_string() // As a string
+        .replace("Content-Type: ", ""); // Remove "Content-Type: "
+    ////println!("{}", content_type);
+
     // Determine post request purpose (verify credentials, create post)
-    if let Some(header) = request.headers().iter().find(|h| h.field.equiv("Authorization")) { // Post process, verify creds, make post, send 201
+    if let Some(header) = request.headers().iter().find(|h| h.field.equiv("Authorization")) && content_type == "application/json" { // [text] Post process, verify creds, make post, send 201
+        println!("Text POST request received!");
         // Even if there is no token, the Bearer token will = Bearer Null thanks to JS magic
         // Which helps differentiate an invalid post maker POST from a(n) (in)valid 
         let mut token: String = header.value.to_string();
@@ -221,7 +231,7 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
             let resp = Response::empty(403); // Not a valid token or has expired.
             let _ = request.respond(resp);
         } else { // Token exists and is not expired
-            // TODO Read json body
+            // Read json body (only done now as untokened JSON might be dangerous? idk, just very scared for my precious opsec)
             match serde_json::from_slice::<TextContent>(&buf) {
                 Ok(text) => {
                     let text_content: TextContent = TextContent {
@@ -255,6 +265,9 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
                 }
             };
         }
+    } else if let Some(header) = request.headers().iter().find(|h| h.field.equiv("Authorization")) {
+        println!("Image POST request received!");
+        todo!("Image POST request handling not implemented. Server will shut down now.");
     } else { // Sign in process, verify creds, send token
         println!("No authorisation token located. Sign in process begun...");
 
@@ -458,5 +471,55 @@ fn generate_token(user: String) -> String {
 }
 
 fn htmlify(text_json: TextContent) {
+    println!("HTML Formatting begun...");
 
+    // HTML constants [UPDATE TO CHANGE APPEARANCE]
+    let header: &'static str = r#"<!DOCTYPE html> <!-- NOTE: Do not use AI to generate code for this repository. Thank you for your understanding.-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="style.css" rel="stylesheet">
+    <title>"#;
+
+    // Title goes between these two string literals
+
+    let header_part2: &'static str = r#"</title>
+</head>
+<body>
+    <div id="header" class="header">
+        <div id="title" class="title">
+            CanSat 2025
+        </div>
+        <div id="navigation_bar" class="navigation">
+            <a href="home.html" class="nav_link">Home</a>
+             | 
+            <a href="about_us.html" class="nav_link">About us</a>
+             | 
+            <a href="team_only.html" class="nav_link">Team only</a>
+        </div>
+    </div>
+"#;
+
+    let footer: &'static str = r#"
+</body>
+</html>
+"#;
+    // ^^ These make indentation weird so ignore it
+
+    let title: String = text_json.title;
+
+    let content: String = format_content(text_json.content); // image_tag replaced with <image>
+
+    // TODO replace [image_tags.file_extension] with <img src="file_path/image_tags.file_extension"></img>
+    
+    // TODO header + title + content + footer
+}
+
+fn format_content(content: String) -> String {
+    // TODO find image tag locations
+
+    // TODO 
+
+    return "".to_string();
 }
