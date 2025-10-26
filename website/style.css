@@ -5,7 +5,7 @@
 .header {
     position: absolute;
     height: 90px;
-    width: 100vw;
+    width: 100%; /* TODO Alter this so only one scroll bar appears when the height is greater than 100% vh - Wait no, fixed it!*/
     background-color: cadetblue;
     margin: 0px;
     padding: 0px;
@@ -97,15 +97,17 @@ a:hover {
     border: none;
 }
 
+/* May have a use later so archived
 .post_title {
-    font: bold;
+
 }
+*/
 
 .post_description {
     border: none;
 }
 
-/* Team only section (of the website this isn't secret css) */
+/* Team only section (of the website, this isn't secret css) */
 
 .security {
     display: flex;
@@ -127,6 +129,19 @@ a:hover {
 }
 
 .title_box {
-    max-width: 80vw;
+    width: 80vw;
     height: 20px;
+    margin: 0px;
+    margin-top: 20px;
+    margin-bottom: 5px;
+}
+
+.content_box {
+    width: 80vw;
+    margin: 0px;
+    margin-bottom: 5px;
+}
+
+.post_button {
+    margin-top: 5px;
 }

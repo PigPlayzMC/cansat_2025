@@ -41,7 +41,7 @@
         <div id="post_maker" class="post_maker">
             <div id="explainer" class="explainer">
                 <b>Overview:</b><br>
-                Welcome to the bespoke post maker, which allows which allows even the least technical of the outreach team
+                Welcome to the bespoke post maker, which allows even the least technical of the outreach team
                 to seamlessly create beautiful standardised posts (or something like that).<br>
                 NOTE: All fields are required and the post will not upload without all.<br>
                 NOTE: From login, you have 30 minutes to complete your post before the credentials expire. For this reason, it is 
@@ -66,7 +66,8 @@
                 This is where the images found in the image tags from earlier can be uploaded, in a folder. This folder must contain all 
                 images used in the content image tags <b>and</b> a thumbnail image with; <br>
                 &emsp;&emsp;&emsp;&emsp;- a 1:1 aspect ratio (it is as wide as it is high)<br>
-                &emsp;&emsp;&emsp;&emsp;- the name thumbnail.{file extension (png, jpeg, etc)}<br>
+                &emsp;&emsp;&emsp;&emsp;- the name thumbnail.{file extension (png, jpeg, etc)} (Case sensitive)<br>
+                An error will occur if this file is missing
                 <!-- ^^ Looks a mess but works -->
             </div>
 
@@ -75,16 +76,22 @@
             </div>
 
             <div id="content_setting">
-                <!-- TODO image code used here : I *will* trick the non-technical people into using html one way or another-->
+                <!-- image code used here : I *will* trick the non-technical people into using html one way or another [see post_posts.js] -->
+                <textarea placeholder="Content"  class="content_box" id="content_box"></textarea>
             </div>
 
             <div id="description_setting">
-
+                <textarea placeholder="Description" class="content_box" id="description_box"></textarea>
             </div>
 
             <div id="file_upload">
-
+                Images folder:
+                <input type="file" id="image_file" webkitdirectory mozdirectory />
+                <!-- ^^ This allows for folders to be uploaded rather than individual files -->
+                <i>This may cause a warning; Trust me, it's fine!</i>
             </div>
+
+            <button id="post_button" class="post_button">Post!</button>
         </div>
     </div>
 

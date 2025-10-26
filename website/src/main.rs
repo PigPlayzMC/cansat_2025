@@ -121,12 +121,12 @@ fn handle_get(request: Request) -> Result<(), Box<dyn std::error::Error + Send +
     let file_name = file_path.replace("website/", "");
     let content = fs::read_to_string(&file_name).unwrap_or_else(|_| "<h1>404 Not Found</h1>".to_string());
 
-    let content_type = if file_name.ends_with(".html") {
+    let content_type = if file_name.ends_with(".html") { //TODO match?
         "text/html"
     } else if file_name.ends_with(".css") {
         "text/css"
     } else if file_name.ends_with(".js") {
-        "text/javascript"
+        "text/javascript" // Should only be text/javascript (but application/javascript does actually work anyway because *ba...*)
     } else if file_name.ends_with(".svg") || file_name.ends_with(".xml") {
         "image/svg+xml"
     } else if file_name.ends_with(".jpeg") || file_name.ends_with(".jpg") {
@@ -141,7 +141,8 @@ fn handle_get(request: Request) -> Result<(), Box<dyn std::error::Error + Send +
         "text/plain"
     };
 
-    if file_name.ends_with("salts.json") || file_name.ends_with("credentials.json") { // Maybe not for transmission, even if they ask nicely
+    // VV Salts.json not in use (or existence) consider removal
+    if file_name.ends_with("salts.json") || file_name.ends_with("credentials.json") || file_name.ends_with("posts.json") { // Maybe not for transmission, even if they ask nicely
         println!("Attempted access to restricted files");
         let resp = Response::empty(403); // Could send 404 to obscure existence but this is open source
         let _ = request.respond(resp);

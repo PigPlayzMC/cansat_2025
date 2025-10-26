@@ -138,7 +138,7 @@ function formatTeamOnly() { // Also vulnerable to script injection probably
     they have the wrong token and the server rejects it.
     */
     security.style.display = "none";
-    post_maker.style.display = "flex"; // I ❤️ flexbox (also this is a unicode heart?)
+    post_maker.style.display = "flex"; // I ❤️ flexbox (also this is a unicode heart? No, only on my default theme apparently)
 
     ////description_box.innerText = "";
     ////content_box.innerText = "";
