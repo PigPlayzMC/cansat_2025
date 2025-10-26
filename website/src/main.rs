@@ -1,4 +1,5 @@
 #[forbid(unsafe_code)] // It's against the spirit of the language (and totally unneeded here)
+// TODO Move certain functions to different files; this is unprofessional
 
 use std::{
     fs::{
@@ -55,6 +56,13 @@ struct TokenLog {
     expires: String
 }
 
+#[derive(Deserialize, Serialize, Debug)]
+struct TextContent {
+    title: String,
+    description: String,
+    content: String
+}
+
 // At some point this broke Live Server's auto reload function so just open like normal, run the server, then manually reload
 fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let url: &'static str = "127.0.0.1:5500";
@@ -67,13 +75,13 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let _ = File::create("credentials.json");
         eprintln!("ERROR: Failed to open credentials.json");
         panic!("File open failure: credentials.json");
-    }
+    };
 
     let parsed_credentials: Value = serde_json::from_str(&raw_credentials).unwrap_or_else(|_| Value::Null);
     if parsed_credentials == Value::Null {
         eprintln!("ERROR: Failed to parse credentials.json");
         panic!("File parse failure: credentials.json");
-    }
+    };
 
     println!("Successfully opened credentials.json!");
 
@@ -142,7 +150,7 @@ fn handle_get(request: Request) -> Result<(), Box<dyn std::error::Error + Send +
     };
 
     // VV Salts.json not in use (or existence) consider removal
-    if file_name.ends_with("salts.json") || file_name.ends_with("credentials.json") { // Maybe not for transmission, even if they ask nicely
+    if file_name.ends_with("salts.json") || file_name.ends_with("credentials.json") || file_name.ends_with("tokens_granted.json"){ // Maybe not for transmission, even if they ask nicely
         println!("Attempted access to restricted files");
         let resp = Response::empty(403); // Could send 404 to obscure existence but this is open source
         let _ = request.respond(resp);
@@ -156,123 +164,208 @@ fn handle_get(request: Request) -> Result<(), Box<dyn std::error::Error + Send +
 }
 
 fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let mut buf: Vec<u8> = Vec::new();
-    request.as_reader().read_to_end(&mut buf)?;
+    let mut buf: Vec<u8> = Vec::new(); // This is empty body attribute!!
+    request.as_reader().read_to_end(&mut buf)?; // This is request body!!
 
-    // TODO determine post request purpose (register credentials, verify credentials, create post)
-    if let Some(header) = request.headers().iter().find(|h| h.field.equiv("Authorization")) {
-        println!("Authorisation token located: {}", header.value);
-    } else {
-        println!("No authorisation token located. Sign in process begun.");
-    }
+    // Determine post request purpose (verify credentials, create post)
+    if let Some(header) = request.headers().iter().find(|h| h.field.equiv("Authorization")) { // Post process, verify creds, make post, send 201
+        // Even if there is no token, the Bearer token will = Bearer Null thanks to JS magic
+        // Which helps differentiate an invalid post maker POST from a(n) (in)valid 
+        let mut token: String = header.value.to_string();
+        println!("Authorisation token located: {}", token);
 
-    // open credentials.json
-    let raw_credentials: String = fs::read_to_string("credentials.json").unwrap(); // Won't fail, its already passed the initial check
+        token = token.replace("Bearer ", "");
 
-    let parsed_credentials: Value = serde_json::from_str(&raw_credentials).unwrap(); // Same here
+        let mut token_accepted: bool = false;
 
-    match serde_json::from_slice::<Credentials>(&buf) {
-        Ok(creds) => {
-            println!("Received credentials: {:?}", creds);
-            let mut credentials: Credentials = Credentials {
-                user: (creds.user),
-                pass: (creds.pass),
-                time: (creds.time)
-            };
+        // Verify token exists && is valid
+        let raw_tokens: String = fs::read_to_string("tokens_granted.json").unwrap_or_else(|_| "FAIL".to_string());
+        if raw_tokens == "FAIL".to_string() {
+            let _ = File::create("tokens_granted.json");
+            eprintln!("ERROR: Failed to open tokens_granted.json");
+            panic!("File open failure: tokens_granted.json");
+        };
 
-            //TODO Uncover secret meaning behind this because, as a genius, I never do random stuff, just forget my masterstrokes.
-            credentials.pass = credentials.pass; // ?? Whjat is this forr??
+        let parsed_tokens: Value = serde_json::from_str(&raw_tokens).unwrap_or_else(|_| Value::Null);
+        if parsed_tokens == Value::Null {
+            eprintln!("ERROR: Failed to parse tokens_granted.json");
+            panic!("File parse failure: tokens_granted.json");
+        };
 
-            // Find account to sign into
-            let mut actual_credentials = TrueCredentials {
-                user: "default".to_string(), //Not valid so no chance of natural occurence also hashed so dont be stupid
-                pass: "default".to_string(),
-                uuid: "default".to_string(),
-            };
+        if let Some(array) = parsed_tokens.as_array() { // Token validation
+            if let Some(obj) = array.iter().find(|item| item["token"] == token) {
+                println!("Token found!");
 
-            let mut valid: bool = false; // Whether the username exists
-            if let Some(array) = parsed_credentials.as_array() {
-                if let Some(obj) = array.iter().find(|item| item["user"] == credentials.user) {
-                    if let Some(username) = obj.get("user").and_then(|v| v.as_str()) 
-                        && let Some(password) = obj.get("pass").and_then(|v| v.as_str())
-                        && let Some(uuid) = obj.get("uuid").and_then(|v| v.as_str())
-                    { // Assume this will always be true as it was parsed as proper JSON earlier.
-                        actual_credentials = TrueCredentials {
-                            user: username.to_string(), // Not strictly required.
-                            pass: password.to_string(),
-                            uuid:  uuid.to_string()
-                        };
+                if let Some(expire_time) = obj.get("expires").and_then(|v| v.as_i64()) {
+                    let now: chrono::DateTime<Utc> = Utc::now();
+                    let time: i64 = now.timestamp();
+
+                    if time <= expire_time {
+                        println!("Token valid!"); // Expiry time is in the future
+                        token_accepted = true;
                     } else {
-                        panic!("ERROR: Incorrect JSON?");
-                    }
-                    valid = true;
+                        println!("Token expired!");
+                        token_accepted = false;
+                    };
                 } else {
-                    valid = false;
+                    panic!("ERROR: Incorrect JSON in tokens_granted.json");
                 }
+
+            } else {
+                println!("No such token; Connection refused.");
+                token_accepted = false;
             }
+        }; // Assume this won't fail...
 
-            let state: &'static str;
-            let accepted: bool;
-            if valid {
-                // Convert string uuid to real uuid
-                ////println!("UUID: {}", actual_credentials.uuid);
-                let uuid: Uuid = Uuid::parse_str(&actual_credentials.uuid).unwrap(); // Assume valid because I did it
-                let salt_bytes: &[u8; 16] = uuid.as_bytes();
+        if !token_accepted { // Token wrong or expired
+            let resp = Response::empty(403); // Not a valid token or has expired.
+            let _ = request.respond(resp);
+        } else { // Token exists and is not expired
+            // TODO Read json body
+            match serde_json::from_slice::<TextContent>(&buf) {
+                Ok(text) => {
+                    let text_content: TextContent = TextContent {
+                        title: text.title,
+                        description: text.description,
+                        content: text.content
+                    };
 
-                // Rehash password with salt (uuid)
-                let salt: SaltString = SaltString::encode_b64(salt_bytes)?; // Assume no errors again :/
+                    println!("{:?}", text_content);
 
-                let argon2: Argon2<'_> = Argon2::default(); // This is the recommended setting from OWASP
+                    // TODO HTMLify text content
+                    let new_document = htmlify(text_content);
 
-                let double_password_hash: String = argon2
-                    .hash_password(credentials.pass.as_bytes(), &salt)?
-                    .to_string()
-                    .replace("$argon2id$v=19$m=19456,t=2,p=1$", "")
-                    .replace("$", "");
+                    // TODO write to posts.json if text
 
-                // Check whether these VERY VERY processed credentials actually justify any of the HOURS of work
-                if double_password_hash == actual_credentials.pass {
-                    println!("LOGIN: Success! User {} logged in.", actual_credentials.user); // This uses actual credentials to avoid compiler flipout
-                    state = "SUCCESS: "; // There is a more efficient way to do this
-                    accepted = true;
+                    // TODO write images to posts/assets/
+
+                    let mut resp: Response<std::io::Cursor<Vec<u8>>> = Response::from_string("Created");
+                    resp = resp.with_status_code(201);
+                    resp.add_header(Header::from_bytes(&b"Content-Type"[..], &b"text/plain"[..]).unwrap());
+                    resp.add_header(Header::from_bytes(&b"Access-Control-Allow-Origin"[..], &b"*"[..]).unwrap());
+                    request.respond(resp)?;
+                }
+                Err(err) => {
+                    eprintln!("ERROR: Failed to parse POST text JSON: {}", err);
+                    let mut resp: Response<std::io::Cursor<Vec<u8>>> = Response::from_string("Bad Request");
+                    resp = resp.with_status_code(400);
+                    resp.add_header(Header::from_bytes(&b"Content-Type"[..], &b"text/plain"[..]).unwrap());
+                    resp.add_header(Header::from_bytes(&b"Access-Control-Allow-Origin"[..], &b"*"[..]).unwrap());
+                    request.respond(resp)?;
+                }
+            };
+        }
+    } else { // Sign in process, verify creds, send token
+        println!("No authorisation token located. Sign in process begun...");
+
+        // open credentials.json
+        let raw_credentials: String = fs::read_to_string("credentials.json").unwrap(); // Won't fail, its already passed the initial check
+
+        let parsed_credentials: Value = serde_json::from_str(&raw_credentials).unwrap(); // Same here
+
+        match serde_json::from_slice::<Credentials>(&buf) {
+            Ok(creds) => {
+                println!("Received credentials: {:?}", creds);
+                let mut credentials: Credentials = Credentials {
+                    user: (creds.user),
+                    pass: (creds.pass),
+                    time: (creds.time)
+                };
+
+                //TODO Uncover secret meaning behind this because, as a genius, I never do random stuff, just forget my masterstrokes.
+                credentials.pass = credentials.pass; // ?? Whjat is this forr??
+
+                // Find account to sign into
+                let mut actual_credentials = TrueCredentials {
+                    user: "default".to_string(), //Not valid so no chance of natural occurence also hashed so dont be stupid
+                    pass: "default".to_string(),
+                    uuid: "default".to_string(),
+                };
+
+                let mut valid: bool = false; // Whether the username exists
+                if let Some(array) = parsed_credentials.as_array() {
+                    if let Some(obj) = array.iter().find(|item| item["user"] == credentials.user) {
+                        if let Some(username) = obj.get("user").and_then(|v| v.as_str()) 
+                            && let Some(password) = obj.get("pass").and_then(|v| v.as_str())
+                            && let Some(uuid) = obj.get("uuid").and_then(|v| v.as_str())
+                        { // Assume this will always be true as it was parsed as proper JSON earlier.
+                            actual_credentials = TrueCredentials {
+                                user: username.to_string(), // Not strictly required.
+                                pass: password.to_string(),
+                                uuid:  uuid.to_string()
+                            };
+                        } else {
+                            panic!("ERROR: Incorrect JSON?");
+                        }
+                        valid = true;
+                    } else {
+                        valid = false;
+                    }
+                }
+
+                let state: &'static str;
+                let accepted: bool;
+                if valid {
+                    // Convert string uuid to real uuid
+                    ////println!("UUID: {}", actual_credentials.uuid);
+                    let uuid: Uuid = Uuid::parse_str(&actual_credentials.uuid).unwrap(); // Assume valid because I did it
+                    let salt_bytes: &[u8; 16] = uuid.as_bytes();
+
+                    // Rehash password with salt (uuid)
+                    let salt: SaltString = SaltString::encode_b64(salt_bytes)?; // Assume no errors again :/
+
+                    let argon2: Argon2<'_> = Argon2::default(); // This is the recommended setting from OWASP
+
+                    let double_password_hash: String = argon2
+                        .hash_password(credentials.pass.as_bytes(), &salt)?
+                        .to_string()
+                        .replace("$argon2id$v=19$m=19456,t=2,p=1$", "")
+                        .replace("$", "");
+
+                    // Check whether these VERY VERY processed credentials actually justify any of the HOURS of work
+                    if double_password_hash == actual_credentials.pass {
+                        println!("LOGIN: Success! User {} logged in.", actual_credentials.user); // This uses actual credentials to avoid compiler flipout
+                        state = "SUCCESS: "; // There is a more efficient way to do this
+                        accepted = true;
+                    } else {
+                        println!("LOGIN: Fail! Incorrect password for user {}.", actual_credentials.user);
+                        state = "FAIL: "; // And here
+                        accepted = false;
+                    }
                 } else {
-                    println!("LOGIN: Fail! Incorrect password for user {}.", actual_credentials.user);
-                    state = "FAIL: "; // And here
+                    println!("LOGIN: FAIL! No such user {}", credentials.user);
+                    state = "FAIL: ";
                     accepted = false;
                 }
-            } else {
-                println!("LOGIN: FAIL! No such user {}", credentials.user);
-                state = "FAIL: ";
-                accepted = false;
-            }
+                
+
+                // Record login attempt and status
+                let log: String = state.to_string() + &credentials.user + " " + &credentials.pass + "\r\n"; // Logs to new line
+                // Has to be credentials.user or falsely credentialed logins would be wrong
+                let _ = fs::OpenOptions::new().append(true).create(true).open("access.txt")?.write_all(log.as_bytes());
             
+                if accepted {
+                    let token: String = generate_token(credentials.user);
 
-            // Record login attempt and status
-            let log: String = state.to_string() + &credentials.user + " " + &credentials.pass + "\r\n"; // Logs to new line
-            // Has to be credentials.user or falsely credentialed logins would be wrong
-            let _ = fs::OpenOptions::new().append(true).create(true).open("access.txt")?.write_all(log.as_bytes());
-        
-            if accepted {
-                let token: String = generate_token(credentials.user);
-
-                let mut resp: Response<std::io::Cursor<Vec<u8>>> = Response::from_string(token);
+                    let mut resp: Response<std::io::Cursor<Vec<u8>>> = Response::from_string(token);
+                    resp.add_header(Header::from_bytes(&b"Content-Type"[..], &b"text/plain"[..]).unwrap());
+                    resp.add_header(Header::from_bytes(&b"Access-Control-Allow-Origin"[..], &b"*"[..]).unwrap());
+                    request.respond(resp)?;
+                } else { // Either wrong password or wrong username (Both can't happen because a false username doesn't have a password)
+                    let resp = Response::empty(403); // Not allowed!!!
+                    let _ = request.respond(resp);
+                }
+            }
+            Err(err) => {
+                eprintln!("ERROR: Failed to parse POST JSON: {}", err);
+                let mut resp: Response<std::io::Cursor<Vec<u8>>> = Response::from_string("Bad Request");
+                resp = resp.with_status_code(400);
                 resp.add_header(Header::from_bytes(&b"Content-Type"[..], &b"text/plain"[..]).unwrap());
                 resp.add_header(Header::from_bytes(&b"Access-Control-Allow-Origin"[..], &b"*"[..]).unwrap());
                 request.respond(resp)?;
-            } else { // Either wrong password or wrong username (Both can't happen because a false username doesn't have a password)
-                let resp = Response::empty(403); // Not allowed!!!
-                let _ = request.respond(resp);
             }
-        }
-        Err(err) => {
-            eprintln!("ERROR: Failed to parse POST JSON: {}", err);
-            let mut resp: Response<std::io::Cursor<Vec<u8>>> = Response::from_string("Bad Request");
-            resp = resp.with_status_code(400);
-            resp.add_header(Header::from_bytes(&b"Content-Type"[..], &b"text/plain"[..]).unwrap());
-            resp.add_header(Header::from_bytes(&b"Access-Control-Allow-Origin"[..], &b"*"[..]).unwrap());
-            request.respond(resp)?;
-        }
-    }
+        };
+    };
 
     Ok(())
 }
@@ -359,7 +452,11 @@ fn generate_token(user: String) -> String {
     // Rewrite file (this destroys the original data but is required)
     let _ = fs::write("tokens_granted.json", tokens_string);
 
-    // Not bothering to encrypt, a token is fine
+    // Not bothering to encrypt, a token is fine though HTTPS
 
     return token_log.token;
+}
+
+fn htmlify(text_json: TextContent) {
+
 }

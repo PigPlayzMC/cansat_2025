@@ -221,10 +221,10 @@ function jsonifyText() { // Returns JSON object
 };
 
 async function postNewPost(json_text, images_required) {
+    const token = localStorage.getItem("Token"); // Either stringified UUIDv4 or Null
+
     // Post request for json of text
     try {
-        const token = localStorage.getItem("Token");
-
         const text_response = await fetch(protocol + url1, { 
             method: "POST",
             headers: {
@@ -235,7 +235,7 @@ async function postNewPost(json_text, images_required) {
         });
 
         if (!text_response.ok) {
-            console.error("Server responded with status: {}", text_response.status);
+            console.error("Server responded with status:", text_response.status);
             if (text_response.status == 403) {
                 alert("Invalid token. Please copy work then reload to log in again.");
             };
@@ -274,7 +274,7 @@ async function postNewPost(json_text, images_required) {
         });
 
         if (!image_response.ok) {
-            console.error("Server responded with status: {}", image_response.status);
+            console.error("Server responded with status:", image_response.status);
             if (image_response.status == 403) {
                 alert("Invalid token. Please copy work then reload to log in again.");
             };
