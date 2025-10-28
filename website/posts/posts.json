@@ -3,6 +3,13 @@
     "title": "Fetched post",
     "thumbnail": "default.svg",
     "description": "255 chars of goodness",
-    "content": "Even more characters! wow.",
+    "content": "DEPRECATED - DO NOT USE",
     "date_created": "00/00/0000"
+},{
+  "post_id": "019a2af4-738d-7182-a211-4fd162acd605",
+  "title": "erfs",
+  "thumbnail": "posts/019a2af4-738d-7182-a211-4fd162acd605",
+  "description": "grigrhuqrhouq4j0hiu3un3g5r",
+  "content": "",
+  "date_created": "2025-10-28"
 }]

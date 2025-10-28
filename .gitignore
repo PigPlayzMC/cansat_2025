@@ -6,9 +6,11 @@ website/target
 # VV Used for logging in -> Do not share! -> Manually add to the server each time -> BACK UP DUE TO POTENTIAL FOR LOSS
 # Acually, I have committed examples so it's not an emergency, also they autocreate if they fail to be found so don't worry
 website/credentials.json
-website/access.txt
 website/tokens_granted.json
-website/posts/posts.json
+website/posts/*
+website/access.txt
+# Can't actually gdt access.txt to stay ignored and idk why
 
 # Apple
 */.DS_Store
+website/access.txt

@@ -1,5 +1,6 @@
 #[forbid(unsafe_code)] // It's against the spirit of the language (and totally unneeded here)
 // TODO Move certain functions to different files; this is unprofessional
+// TODO Consider using a real database because these JSON files are completely insane
 
 use std::{
     fs::{
@@ -8,6 +9,7 @@ use std::{
     },
     io::Write
 };
+use regex::Regex;
 use serde_json::Value;
 use tiny_http::{
     Server,
@@ -56,11 +58,21 @@ struct TokenLog {
     expires: String
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 struct TextContent {
     title: String,
     description: String,
     content: String
+}
+
+#[derive(Serialize)]
+struct Post {
+    post_id: String, // UUID v7
+    title: String,
+    thumbnail: String, // This should be interpreted as a path to the thumbnail as the filename will always be thumbnail.{file_extension}
+    description: String,
+    content: String, // ! Content logging is deprecated
+    date_created: String, // convert from NaiveDate
 }
 
 // At some point this broke Live Server's auto reload function so just open like normal, run the server, then manually reload
@@ -178,6 +190,7 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
 
     // Determine post request purpose (verify credentials, create post)
     if let Some(header) = request.headers().iter().find(|h| h.field.equiv("Authorization")) && content_type == "application/json" { // [text] Post process, verify creds, make post, send 201
+        println!("");
         println!("Text POST request received!");
         // Even if there is no token, the Bearer token will = Bearer Null thanks to JS magic
         // Which helps differentiate an invalid post maker POST from a(n) (in)valid 
@@ -241,13 +254,44 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
                     };
 
                     println!("{:?}", text_content);
+                    ////let title = &text_content.title;
+                    ////let description = &text_content.description;
 
-                    // TODO HTMLify text content
-                    let new_document = htmlify(text_content);
+                    // HTMLify text content
+                    let new_document: String = htmlify(text_content.clone()); // Compiler really doesn't like any other way of doing this
+                    ////println!("{}", new_document);
+                    
+                    let post_id: String = Uuid::now_v7().to_string(); // Based on current system time
+                    
+                    // TODO Save as post{id}.html
+                    let path: String = "posts/".to_owned() + &post_id + ".html";
+                    let _ = fs::write(path ,new_document);
+                    
+                    // TODO open posts.json to overwrite with this new data
 
-                    // TODO write to posts.json if text
+                    // Struct for conversion to JSON object
+                    let post_data: Post = Post {
+                        post_id: post_id.clone(),
+                        title: text_content.title,
+                        thumbnail: "posts/".to_string() + &post_id, // Path to thumbnail rather than actual thumbnail filename
+                        description: text_content.description,
+                        content: "".to_string(), // ! Deprecated field - Do Not Use
+                        date_created: Utc::now().date_naive().to_string(),
+                    };
 
-                    // TODO write images to posts/assets/
+                    // Rewrite posts.json [this may be the most computationally expensive element of this file but Rust is fast...
+                    // and this is a low demand service so these compiler acrobatics are fine]
+                    let post_json: String = serde_json::to_string_pretty(&post_data).unwrap();
+
+                    // Open posts/posts.json (copied from credentials creation code)
+                    let mut posts: String = fs::read_to_string("posts/posts.json").unwrap();
+                    posts = posts.replace("]", "").trim_end().to_string();
+
+                    // Add new post
+                    posts = posts + "," + &post_json + "]";
+
+                    // Rewrite file (this destroys the original data but is required)
+                    let _ = fs::write("posts/posts.json", posts);
 
                     let mut resp: Response<std::io::Cursor<Vec<u8>>> = Response::from_string("Created");
                     resp = resp.with_status_code(201);
@@ -266,9 +310,11 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
             };
         }
     } else if let Some(header) = request.headers().iter().find(|h| h.field.equiv("Authorization")) {
+        println!("");
         println!("Image POST request received!");
         todo!("Image POST request handling not implemented. Server will shut down now.");
     } else { // Sign in process, verify creds, send token
+        println!("");
         println!("No authorisation token located. Sign in process begun...");
 
         // open credentials.json
@@ -466,21 +512,23 @@ fn generate_token(user: String) -> String {
     let _ = fs::write("tokens_granted.json", tokens_string);
 
     // Not bothering to encrypt, a token is fine though HTTPS
+    // TODO encrypt :\
 
     return token_log.token;
 }
 
-fn htmlify(text_json: TextContent) {
+fn htmlify(text_json: TextContent) -> String {
     println!("HTML Formatting begun...");
 
     // HTML constants [UPDATE TO CHANGE APPEARANCE]
-    let header: &'static str = r#"<!DOCTYPE html> <!-- NOTE: Do not use AI to generate code for this repository. Thank you for your understanding.-->
+    // Consider storing in a file
+    let header_part1: &'static str = r#"<!DOCTYPE html> <!-- NOTE: Do not use AI to generate code for this repository. Thank you for your understanding.-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="style.css" rel="stylesheet">
-    <title>"#;
+    <link href="post_styling.css" rel="stylesheet">
+    <title>CanSat | "#;
 
     // Title goes between these two string literals
 
@@ -499,27 +547,62 @@ fn htmlify(text_json: TextContent) {
             <a href="team_only.html" class="nav_link">Team only</a>
         </div>
     </div>
+    <div class="header_section">
+        <!-- Leave blank to avoid spacing issues with the header.
+        If these issues manifest, please alter the height of this in style.css-->
+    </div>
 "#;
 
     let footer: &'static str = r#"
 </body>
 </html>
 "#;
-    // ^^ These make indentation weird so ignore it
+    // ^^ These make indentation weird so ignore it pls tysm
 
     let title: String = text_json.title;
 
-    let content: String = format_content(text_json.content); // image_tag replaced with <image>
-
-    // TODO replace [image_tags.file_extension] with <img src="file_path/image_tags.file_extension"></img>
+    let content: String = format_content(text_json.content); // image_tag replaced with <img>
     
-    // TODO header + title + content + footer
+    // header + title + content + footer
+    let document: String = header_part1.to_string() + &title + header_part2 + &content + footer;
+
+    // Consider doing verification that no body does something stupid like using a reserved pattern eg; I am so <a> nnoying to the server team
+    // Never mind, they get what they deserve. I'll just complain on the group chat
+    return document // Valid HTML (probably)
 }
 
 fn format_content(content: String) -> String {
-    // TODO find image tag locations
+    // Image tag regex borrowed from clientside
+    // Altered to allow for any character before and after
+    let image_tag_regex: Regex = Regex::new(r"\[\S+\.\S+]").unwrap();
+    // ^^ Expensive; consider defining in greater scope :)
 
-    // TODO 
+    // Replace the tags for actual HTML.
+    let mut iter: usize = 0; // Operationally expensive but we shouldn't have more than 5 images per page.
+    // Very little total usage
+    let content_split_whitespace: Vec<&str> = content.split("\n").collect(); // Each individual word in content
+    let mut content_split_replaced: Vec<String> = vec![];
+    while iter < content_split_whitespace.len() {
+        let content_substring: String;
+        ////println!("Seperated whitespace: {}", content_split_whitespace[iter]);
+        if image_tag_regex.is_match(content_split_whitespace[iter]) { // Image tag -> refactor to use HTML standards
+            content_substring = content_split_whitespace[iter].replace("[",r#"<img src=""#) // [ => <img src="
+                .replace("]", r#"">"#); // ] => ">
+        } else { // No processing required
+            content_substring = content_split_whitespace[iter].to_string();
+        };
 
-    return "".to_string();
+        ////println!("Substring: {}", content_substring);
+        content_split_replaced.push(content_substring);
+        content_split_replaced.push("<br>".to_string()); // New line char
+
+        iter += 1;
+    };
+
+    // Now accounts for new line chars
+    let new_content: String = content_split_replaced.concat();
+
+    println!("{}", new_content);
+
+    return new_content;
 }
