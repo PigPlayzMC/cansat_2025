@@ -12,5 +12,6 @@ website/access.txt
 # Can't actually gdt access.txt to stay ignored and idk why
 
 # Apple
-*/.DS_Store
+.DS_Store
 website/access.txt
+website/posts/posts.json

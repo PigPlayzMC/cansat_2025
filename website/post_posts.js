@@ -252,25 +252,30 @@ async function postNewPost(json_text, images_required) {
 
     // TODO Post requests for each image
     iter = 0;
-    let content_type;
-    let index = 0;
     while (iter < images_required.length) {
-        const form_data = new FormData; // Because I didn't use a form element
 
         let iter2 = 0;
-        while (iter2 < image_folder.files.length) {
+        let file_to_send = null;
+        while (iter2 < image_folder.files.length) { 
             if (image_folder.files[iter2].name == images_required[iter]) {
-                form_data.append("image", image_folder.files[iter2]);
+                file_to_send = image_folder.files[iter2]; // This is an actual file
                 break
             };
+
+            iter2 += 1;
+        };
+
+        if (file_to_send == null) {
+            return false
         };
 
         const image_response = await fetch(protocol + url1, {
             method: "POST",
             headers: {
+                "Content-Type": file_to_send.type,
                 "Authorization": `Bearer ${token}`
             },
-            body: form_data
+            body: file_to_send
         });
 
         if (!image_response.ok) {

@@ -5,9 +5,9 @@
 use std::{
     fs::{
         self,
-        File
+        File,
     },
-    io::Write
+    io::Write,
 };
 use regex::Regex;
 use serde_json::Value;
@@ -22,7 +22,10 @@ use serde::{
     Deserialize,
     Serialize,
 };
-use chrono::{Duration, Utc};
+use chrono::{
+    Duration,
+    Utc,
+};
 
 // Security only
 use uuid::Uuid;
@@ -192,56 +195,15 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
     if let Some(header) = request.headers().iter().find(|h| h.field.equiv("Authorization")) && content_type == "application/json" { // [text] Post process, verify creds, make post, send 201
         println!("");
         println!("Text POST request received!");
+
         // Even if there is no token, the Bearer token will = Bearer Null thanks to JS magic
         // Which helps differentiate an invalid post maker POST from a(n) (in)valid 
-        let mut token: String = header.value.to_string();
-        println!("Authorisation token located: {}", token);
-
-        token = token.replace("Bearer ", "");
-
-        let mut token_accepted: bool = false;
-
-        // Verify token exists && is valid
-        let raw_tokens: String = fs::read_to_string("tokens_granted.json").unwrap_or_else(|_| "FAIL".to_string());
-        if raw_tokens == "FAIL".to_string() {
-            let _ = File::create("tokens_granted.json");
-            eprintln!("ERROR: Failed to open tokens_granted.json");
-            panic!("File open failure: tokens_granted.json");
-        };
-
-        let parsed_tokens: Value = serde_json::from_str(&raw_tokens).unwrap_or_else(|_| Value::Null);
-        if parsed_tokens == Value::Null {
-            eprintln!("ERROR: Failed to parse tokens_granted.json");
-            panic!("File parse failure: tokens_granted.json");
-        };
-
-        if let Some(array) = parsed_tokens.as_array() { // Token validation
-            if let Some(obj) = array.iter().find(|item| item["token"] == token) {
-                println!("Token found!");
-
-                if let Some(expire_time) = obj.get("expires").and_then(|v| v.as_i64()) {
-                    let now: chrono::DateTime<Utc> = Utc::now();
-                    let time: i64 = now.timestamp();
-
-                    if time <= expire_time {
-                        println!("Token valid!"); // Expiry time is in the future
-                        token_accepted = true;
-                    } else {
-                        println!("Token expired!");
-                        token_accepted = false;
-                    };
-                } else {
-                    panic!("ERROR: Incorrect JSON in tokens_granted.json");
-                }
-
-            } else {
-                println!("No such token; Connection refused.");
-                token_accepted = false;
-            }
-        }; // Assume this won't fail...
+        // function for verify token rather than this, as image posts will also require verification
+        let token: String = header.value.to_string();
+        let token_accepted = verify_token(token);
 
         if !token_accepted { // Token wrong or expired
-            let resp = Response::empty(403); // Not a valid token or has expired.
+            let resp: Response<std::io::Empty> = Response::empty(403); // Not a valid token or has expired.
             let _ = request.respond(resp);
         } else { // Token exists and is not expired
             // Read json body (only done now as untokened JSON might be dangerous? idk, just very scared for my precious opsec)
@@ -253,7 +215,7 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
                         content: text.content
                     };
 
-                    println!("{:?}", text_content);
+                    ////println!("{:?}", text_content);
                     ////let title = &text_content.title;
                     ////let description = &text_content.description;
 
@@ -263,11 +225,12 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
                     
                     let post_id: String = Uuid::now_v7().to_string(); // Based on current system time
                     
-                    // TODO Save as post{id}.html
+                    // Save as post{id}.html
                     let path: String = "posts/".to_owned() + &post_id + ".html";
-                    let _ = fs::write(path ,new_document);
+                    let _ = fs::write(&path ,new_document);
                     
-                    // TODO open posts.json to overwrite with this new data
+                    // Create folder with same name for folders
+                    let _ = fs::create_dir("posts/".to_owned() + &post_id);
 
                     // Struct for conversion to JSON object
                     let post_data: Post = Post {
@@ -293,6 +256,8 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
                     // Rewrite file (this destroys the original data but is required)
                     let _ = fs::write("posts/posts.json", posts);
 
+                    println!("New HTML post file created and saved!");
+
                     let mut resp: Response<std::io::Cursor<Vec<u8>>> = Response::from_string("Created");
                     resp = resp.with_status_code(201);
                     resp.add_header(Header::from_bytes(&b"Content-Type"[..], &b"text/plain"[..]).unwrap());
@@ -312,7 +277,47 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
     } else if let Some(header) = request.headers().iter().find(|h| h.field.equiv("Authorization")) {
         println!("");
         println!("Image POST request received!");
-        todo!("Image POST request handling not implemented. Server will shut down now.");
+
+        // Verify token
+        let token: String = header.value.to_string();
+        let token_accepted = verify_token(token);
+
+        if !token_accepted { // Token wrong or expired
+            let resp = Response::empty(403); // Not a valid token or has expired.
+            let _ = request.respond(resp);
+        } else {
+            println!("Image saving begun...");
+
+            // Determine image type
+            println!("Content type = {}", content_type);
+            let extension: &'static str;
+            if content_type == "image/png".to_string() {
+                extension = "png";
+            } else if content_type == "image/jpeg" {
+                extension = "jpeg";
+            } else if content_type == "image/svg+xml" {
+                extension = "svg";
+            } else {
+                extension = "png";
+            };
+            // Any malicious file will find itself suddenly a png file, full of spite
+
+            // TODO get file name
+            let file_name = "bob_test";
+
+            // TODO Find last post id for folderisation (TODO stop calling things Xerisation)
+            let last_id = "019a2c18-8427-7292-ad0f-d5d6fc902368";
+
+            let mut body = buf.clone();
+            
+
+            let mut new_image = File::create("posts/".to_string() + last_id + "/" + file_name + "." + extension).unwrap();
+            new_image.write_all(&buf).unwrap();
+
+            // TODO Save each verified file to the folder
+
+            // TODO Respond with relevant code
+        }
     } else { // Sign in process, verify creds, send token
         println!("");
         println!("No authorisation token located. Sign in process begun...");
@@ -429,7 +434,7 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
     Ok(())
 }
 
-#[allow(dead_code)] // Because this is a very useful debug function that I'm not commenting out
+#[allow(dead_code)] // Because this is a very useul debug function that I'm not commenting out
 fn new_credentials(email: String, password: String, ) -> Result<TrueCredentials, Box<dyn std::error::Error>> {
     let hashed_email = hash_string(email);
     let once_hashed_password = hash_string(password);
@@ -551,9 +556,14 @@ fn htmlify(text_json: TextContent) -> String {
         <!-- Leave blank to avoid spacing issues with the header.
         If these issues manifest, please alter the height of this in style.css-->
     </div>
+    <div class=posts>
+    <b>
 "#;
 
+let post_title_header = r#"</b><br><br>"#;
+
     let footer: &'static str = r#"
+    </div>
 </body>
 </html>
 "#;
@@ -564,7 +574,7 @@ fn htmlify(text_json: TextContent) -> String {
     let content: String = format_content(text_json.content); // image_tag replaced with <img>
     
     // header + title + content + footer
-    let document: String = header_part1.to_string() + &title + header_part2 + &content + footer;
+    let document: String = header_part1.to_string() + &title + header_part2 + &title + post_title_header + &content + footer;
 
     // Consider doing verification that no body does something stupid like using a reserved pattern eg; I am so <a> nnoying to the server team
     // Never mind, they get what they deserve. I'll just complain on the group chat
@@ -586,6 +596,7 @@ fn format_content(content: String) -> String {
         let content_substring: String;
         ////println!("Seperated whitespace: {}", content_split_whitespace[iter]);
         if image_tag_regex.is_match(content_split_whitespace[iter]) { // Image tag -> refactor to use HTML standards
+            // TODO Alter to include actual path, likely using post_id folder when image post handling is added
             content_substring = content_split_whitespace[iter].replace("[",r#"<img src=""#) // [ => <img src="
                 .replace("]", r#"">"#); // ] => ">
         } else { // No processing required
@@ -602,7 +613,58 @@ fn format_content(content: String) -> String {
     // Now accounts for new line chars
     let new_content: String = content_split_replaced.concat();
 
-    println!("{}", new_content);
+    ////println!("{}", new_content);
 
     return new_content;
+}
+
+fn verify_token(mut token: String) -> bool { // Check token against tokens_granted.json
+    // TODO Remove debug token from tokens_granted.json
+    println!("Authorisation token located: {}", token);
+
+    token = token.replace("Bearer ", "");
+
+    let mut token_accepted: bool = false;
+
+    // Verify token exists && is valid
+    let raw_tokens: String = fs::read_to_string("tokens_granted.json").unwrap_or_else(|_| "FAIL".to_string());
+    if raw_tokens == "FAIL".to_string() {
+        let _ = File::create("tokens_granted.json");
+        eprintln!("ERROR: Failed to open tokens_granted.json");
+        panic!("File open failure: tokens_granted.json");
+    };
+
+    let parsed_tokens: Value = serde_json::from_str(&raw_tokens).unwrap_or_else(|_| Value::Null);
+    if parsed_tokens == Value::Null {
+        eprintln!("ERROR: Failed to parse tokens_granted.json");
+        panic!("File parse failure: tokens_granted.json");
+    };
+
+    if let Some(array) = parsed_tokens.as_array() { // Token validation
+        if let Some(obj) = array.iter().find(|item| item["token"] == token) {
+            println!("Token found!");
+
+            if let Some(expire_time) = obj.get("expires").and_then(|v| v.as_i64()) {
+                let now: chrono::DateTime<Utc> = Utc::now();
+                let time: i64 = now.timestamp();
+
+                if time <= expire_time {
+                    println!("Token valid!"); // Expiry time is in the future
+                    token_accepted = true;
+                } else {
+                    println!("Token expired!");
+                    token_accepted = false;
+                };
+            } else {
+                panic!("ERROR: Incorrect JSON in tokens_granted.json");
+            }
+        } else {
+            println!("No such token; Connection refused.");
+            token_accepted = false;
+        };
+    }; // Assume this won't fail...
+
+    println!(""); // Seperates token validation dialog from file creation dialog that follows.
+
+    return token_accepted
 }
