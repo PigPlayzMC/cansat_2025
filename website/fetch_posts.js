@@ -19,6 +19,7 @@ async function fetchPosts() {
             posts.push(posts_json[i]);
             i += 1;
         }; // Posts aquired!
+        posts.reverse(); // From latest to oldest
 
         const range = getPostRange(page, page_length, posts.length);
 
@@ -88,7 +89,7 @@ function formatPostsHome(id_minimum, id_maximum, posts) {
         outer_wrapper.className = "post";
 
         const link_wrapper = document.createElement("a");
-        link_wrapper.href = "post.html"; //TODO link to a page with the actual post.
+        link_wrapper.href = "posts/" + posts[id].post_id + ".html"; // Now links to a page with the actual post!
         link_wrapper.className = "post_a";
 
         const image_wrapper = document.createElement("div");
