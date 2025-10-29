@@ -141,7 +141,7 @@ fn handle_get(request: Request) -> Result<(), Box<dyn std::error::Error + Send +
         path.trim_start_matches('/').to_string()
     };
 
-    let mut file_name = file_path.replace("website/", "");
+    let file_name = file_path.replace("website/", "");
 
     /////if file_path.ends_with(".png") {
     ////    file_name = file_name.replace("posts/", "");
