@@ -136,12 +136,12 @@ fn handle_requests(request: Request) -> Result<(), Box<dyn std::error::Error + S
 }
 
 fn handle_get(request: Request) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let path = request.url();
-    let file_path = if path == "/" { "home.html".to_string() } else {
+    let path: &str = request.url();
+    let file_path: String = if path == "/" { "home.html".to_string() } else {
         path.trim_start_matches('/').to_string()
     };
 
-    let file_name = file_path.replace("website/", "");
+    let file_name: String = file_path.replace("website/", "");
 
     /////if file_path.ends_with(".png") {
     ////    file_name = file_name.replace("posts/", "");
