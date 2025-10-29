@@ -256,9 +256,11 @@ async function postNewPost(json_text, images_required) {
 
         let iter2 = 0;
         let file_to_send = null;
+        let file_name;
         while (iter2 < image_folder.files.length) { 
             if (image_folder.files[iter2].name == images_required[iter]) {
                 file_to_send = image_folder.files[iter2]; // This is an actual file
+                file_name = image_folder.files[iter2].name;
                 break
             };
 
@@ -269,11 +271,14 @@ async function postNewPost(json_text, images_required) {
             return false
         };
 
+        console.log(file_name);
+
         const image_response = await fetch(protocol + url1, {
             method: "POST",
             headers: {
                 "Content-Type": file_to_send.type,
-                "Authorization": `Bearer ${token}`
+                "Authorization": `Bearer ${token}`,
+                "Location": file_name, // This is a hack a better programmer would never use. Please don't let him know, if you see him!
             },
             body: file_to_send
         });

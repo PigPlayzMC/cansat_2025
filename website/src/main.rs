@@ -28,7 +28,7 @@ use chrono::{
 };
 
 // Security only
-use uuid::Uuid;
+use uuid::{Uuid};
 use argon2::{
     password_hash::SaltString,
     Argon2,
@@ -141,8 +141,19 @@ fn handle_get(request: Request) -> Result<(), Box<dyn std::error::Error + Send +
         path.trim_start_matches('/').to_string()
     };
 
-    let file_name = file_path.replace("website/", "");
-    let content = fs::read_to_string(&file_name).unwrap_or_else(|_| "<h1>404 Not Found</h1>".to_string());
+    let mut file_name = file_path.replace("website/", "");
+
+    /////if file_path.ends_with(".png") {
+    ////    file_name = file_name.replace("posts/", "");
+    ////};
+
+    println!("Requested path: {}", file_path);
+    println!("Requested file: {}", file_name);
+
+    ////let content = fs::read_to_string(&file_name).unwrap_or_else(|_| "<h1>404 Not Found</h1>".to_string());
+    // posts/example/128_bookwork.png
+
+    ////println!("GET: {}", content);
 
     let content_type = if file_name.ends_with(".html") { //TODO match?
         "text/html"
@@ -170,9 +181,34 @@ fn handle_get(request: Request) -> Result<(), Box<dyn std::error::Error + Send +
         let resp = Response::empty(403); // Could send 404 to obscure existence but this is open source
         let _ = request.respond(resp);
     } else { // We can and will share it
+        let response = if content_type.starts_with("image/") {
+            println!("Sending image...");
+            match fs::read(&file_name) {
+                Ok(bytes) => {
+                    let mut resp = Response::from_data(bytes);
+                    resp.add_header(Header::from_bytes("Content-Type", content_type).unwrap());
+                    resp.add_header(Header::from_bytes("Access-Control-Allow-Origin", "*").unwrap());
+                    resp
+                }
+                Err(_) => Response::from_string("<h1>404 Not Found</h1>").with_status_code(404),
+            }
+        } else {
+            match fs::read_to_string(&file_name) {
+                Ok(text) => {
+                    let mut resp = Response::from_string(text);
+                    resp.add_header(Header::from_bytes("Content-Type", content_type).unwrap());
+                    resp.add_header(Header::from_bytes("Access-Control-Allow-Origin", "*").unwrap());
+                    resp
+                }
+                Err(_) => Response::from_string("<h1>404 Not Found</h1>").with_status_code(404),
+            }
+        };
+        /*
         let mut response = Response::from_string(content);
         response.add_header(Header::from_bytes(&b"Content-Type"[..], content_type.as_bytes()).unwrap());
         response.add_header(Header::from_bytes(&b"Access-Control-Allow-Origin"[..], &b"*"[..]).unwrap());
+        request.respond(response)?;
+        */
         request.respond(response)?;
     }
     Ok(())
@@ -186,7 +222,7 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
         .headers() // The meta data
         .iter() // for _ in ___
         .find(|h| h.field.equiv("Content-Type")) // Where the data is about content-type
-        .unwrap() // Do the operation
+        .unwrap() // And no error has occured
         .to_string() // As a string
         .replace("Content-Type: ", ""); // Remove "Content-Type: "
     ////println!("{}", content_type);
@@ -218,12 +254,13 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
                     ////println!("{:?}", text_content);
                     ////let title = &text_content.title;
                     ////let description = &text_content.description;
-
-                    // HTMLify text content
-                    let new_document: String = htmlify(text_content.clone()); // Compiler really doesn't like any other way of doing this
-                    ////println!("{}", new_document);
-                    
+                     
                     let post_id: String = Uuid::now_v7().to_string(); // Based on current system time
+                    // ^ If in doubt, .clone() again
+                    
+                    // HTMLify text content
+                    let new_document: String = htmlify(text_content.clone(), post_id.clone()); // Compiler really doesn't like any other way of doing this
+                    ////println!("{}", new_document);
                     
                     // Save as post{id}.html
                     let path: String = "posts/".to_owned() + &post_id + ".html";
@@ -257,6 +294,9 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
                     let _ = fs::write("posts/posts.json", posts);
 
                     println!("New HTML post file created and saved!");
+
+                    // Overwrite last_post.json
+                    let _ = fs::write("posts/last_post.json", r#"{"id": ""#.to_string() + &post_id.clone() + r#""}"#);
 
                     let mut resp: Response<std::io::Cursor<Vec<u8>>> = Response::from_string("Created");
                     resp = resp.with_status_code(201);
@@ -298,23 +338,39 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
             } else if content_type == "image/svg+xml" {
                 extension = "svg";
             } else {
-                extension = "png";
+                extension = "txt"; // Allow for easily 
             };
-            // Any malicious file will find itself suddenly a png file, full of spite
+            // Any malicious file will find itself suddenly a txt file, full of spite and (HOPEFULLY) unable to do anything about it
 
-            // TODO get file name
-            let file_name = "bob_test";
+            // Get file name (in one of the worst ways possible :3)
+            let mut file_name: &str = &*request // Again, total hack because I am a subpar programmer.
+                .headers()
+                .iter()
+                .find(|h| h.field.equiv("Location"))
+                .unwrap() // WARNING: Malicious post requests could miss a location and crash the server. Thank goodness for tokens :)
+                .value
+                .to_string()
+                .replace(r#"""#, ""); // " to nothing at all
 
-            // TODO Find last post id for folderisation (TODO stop calling things Xerisation)
-            let last_id = "019a2c18-8427-7292-ad0f-d5d6fc902368";
-
-            let mut body = buf.clone();
             
+            let file_name_split: Vec<_> = file_name.split(".").collect();
+            file_name = file_name_split[0];
 
-            let mut new_image = File::create("posts/".to_string() + last_id + "/" + file_name + "." + extension).unwrap();
+            println!("Filename: {}", file_name);
+            ////println!("{:?}", buf);
+
+            // Find last post id for folderisation (T/ODO stop calling things Xerisation)
+            let raw_last_post: String = fs::read_to_string("posts/last_post.json").unwrap();
+            let parsed_last_post: Value = serde_json::from_str(&raw_last_post).unwrap();
+            
+            ////println!("{}", parsed_last_post["id"]);
+
+            let last_id: Value = parsed_last_post["id"].clone();
+            ////println!("{}", last_id.to_string());
+            
+            // Save each verified file to the folder
+            let mut new_image: File = File::create("posts/".to_string() + &last_id.to_string().replace(r#"""#, "") + "/" + file_name + "." + extension).unwrap();
             new_image.write_all(&buf).unwrap();
-
-            // TODO Save each verified file to the folder
 
             // TODO Respond with relevant code
         }
@@ -522,7 +578,7 @@ fn generate_token(user: String) -> String {
     return token_log.token;
 }
 
-fn htmlify(text_json: TextContent) -> String {
+fn htmlify(text_json: TextContent, post_id: String) -> String {
     println!("HTML Formatting begun...");
 
     // HTML constants [UPDATE TO CHANGE APPEARANCE]
@@ -571,7 +627,7 @@ let post_title_header = r#"</b><br><br>"#;
 
     let title: String = text_json.title;
 
-    let content: String = format_content(text_json.content); // image_tag replaced with <img>
+    let content: String = format_content(text_json.content, post_id); // image_tag replaced with <img>
     
     // header + title + content + footer
     let document: String = header_part1.to_string() + &title + header_part2 + &title + post_title_header + &content + footer;
@@ -581,7 +637,7 @@ let post_title_header = r#"</b><br><br>"#;
     return document // Valid HTML (probably)
 }
 
-fn format_content(content: String) -> String {
+fn format_content(content: String, post_id: String) -> String {
     // Image tag regex borrowed from clientside
     // Altered to allow for any character before and after
     let image_tag_regex: Regex = Regex::new(r"\[\S+\.\S+]").unwrap();
@@ -596,8 +652,9 @@ fn format_content(content: String) -> String {
         let content_substring: String;
         ////println!("Seperated whitespace: {}", content_split_whitespace[iter]);
         if image_tag_regex.is_match(content_split_whitespace[iter]) { // Image tag -> refactor to use HTML standards
-            // TODO Alter to include actual path, likely using post_id folder when image post handling is added
-            content_substring = content_split_whitespace[iter].replace("[",r#"<img src=""#) // [ => <img src="
+            // Altered to include actual path, likely using post_id folder when image post handling is added
+            let path: String = r#"<img src=""#.to_string() + &post_id + "/";
+            content_substring = content_split_whitespace[iter].replace("[",&path) // [ => <img src="
                 .replace("]", r#"">"#); // ] => ">
         } else { // No processing required
             content_substring = content_split_whitespace[iter].to_string();

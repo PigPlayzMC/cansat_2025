@@ -23,6 +23,7 @@ This is a todo list. Please tag yourself in assigned items to ensure efficiency.
 - Recall posts from server [@PigPlayzMC]
 - Literally everything else [@PigPlayzMC]
 - Verify submitted files are ONLY images [@PigPlayzMC]
+- Fix file pathing [@PigPlayzMC]
 
 ## CanSat code
 
