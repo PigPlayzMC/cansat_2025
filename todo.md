@@ -15,6 +15,7 @@ This is a todo list. Please tag yourself in assigned items to ensure efficiency.
 - Fix issue where title is 100vw rather than 100% actual displayed area, exaccerbating scrollbar issue [@PigPlayzMC]
 - Folderisation to increase file system legibility [@PigPlayzMC] *LOW PRIORITY*
 - Mobile formatting
+- Dedicated 404 page [@PigPlayzMC]
 
 ## Server [@PigPlayzMC]
 
@@ -24,6 +25,7 @@ This is a todo list. Please tag yourself in assigned items to ensure efficiency.
 - Literally everything else [@PigPlayzMC]
 - Verify submitted files are ONLY images [@PigPlayzMC]
 - Fix file pathing [@PigPlayzMC]
+- Support for dedicated 404 page [@PigPlayzMC] {BLOCKED}
 
 ## CanSat code
 

@@ -77,6 +77,7 @@ struct Post {
     content: String, // ! Content logging is deprecated
     date_created: String, // convert from NaiveDate
 }
+// KLM OY58UD < remove after flight
 
 // At some point this broke Live Server's auto reload function so just open like normal, run the server, then manually reload
 fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -143,12 +144,14 @@ fn handle_get(request: Request) -> Result<(), Box<dyn std::error::Error + Send +
 
     let file_name: String = file_path.replace("website/", "");
 
+    //TODO Ensure clicking one of our links in the header from a post, doesn't result in getting sent to a 404 page.
+
     /////if file_path.ends_with(".png") {
     ////    file_name = file_name.replace("posts/", "");
     ////};
 
-    println!("Requested path: {}", file_path);
-    println!("Requested file: {}", file_name);
+    ////println!("Requested path: {}", file_path);
+    ////println!("Requested file: {}", file_name);
 
     ////let content = fs::read_to_string(&file_name).unwrap_or_else(|_| "<h1>404 Not Found</h1>".to_string());
     // posts/example/128_bookwork.png
@@ -182,25 +185,47 @@ fn handle_get(request: Request) -> Result<(), Box<dyn std::error::Error + Send +
         let _ = request.respond(resp);
     } else { // We can and will share it
         let response = if content_type.starts_with("image/") {
-            println!("Sending image...");
+            ////println!("Sending image...");
             match fs::read(&file_name) {
-                Ok(bytes) => {
+                Ok(bytes) => { // images that must be read as bytes
                     let mut resp = Response::from_data(bytes);
                     resp.add_header(Header::from_bytes("Content-Type", content_type).unwrap());
                     resp.add_header(Header::from_bytes("Access-Control-Allow-Origin", "*").unwrap());
                     resp
                 }
-                Err(_) => Response::from_string("<h1>404 Not Found</h1>").with_status_code(404),
+                Err(_) => {
+                    match fs::read_to_string("default.svg") {
+                        Ok(text) => { // text documents that can be read as strings
+                            let mut resp = Response::from_string(text);
+                            resp.add_header(Header::from_bytes("Content-Type", content_type).unwrap());
+                            resp.add_header(Header::from_bytes("Access-Control-Allow-Origin", "*").unwrap());
+                            resp = resp.with_status_code(404);
+                            resp
+                        }
+                        Err(_) => Response::from_string("<h1>404 Not Found</h1>").with_status_code(404),
+                    }
+                }
             }
         } else {
             match fs::read_to_string(&file_name) {
-                Ok(text) => {
+                Ok(text) => { // text documents that can be read as strings
                     let mut resp = Response::from_string(text);
                     resp.add_header(Header::from_bytes("Content-Type", content_type).unwrap());
                     resp.add_header(Header::from_bytes("Access-Control-Allow-Origin", "*").unwrap());
                     resp
                 }
-                Err(_) => Response::from_string("<h1>404 Not Found</h1>").with_status_code(404),
+                Err(_) => {
+                    match fs::read_to_string("404.html") {
+                        Ok(text) => { // text documents that can be read as strings
+                            let mut resp = Response::from_string(text);
+                            resp.add_header(Header::from_bytes("Content-Type", content_type).unwrap());
+                            resp.add_header(Header::from_bytes("Access-Control-Allow-Origin", "*").unwrap());
+                            resp = resp.with_status_code(404);
+                            resp
+                        }
+                        Err(_) => Response::from_string("<h1>404 Not Found</h1>").with_status_code(404),
+                    }
+                }
             }
         };
         /*
@@ -268,6 +293,8 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
                     
                     // Create folder with same name for folders
                     let _ = fs::create_dir("posts/".to_owned() + &post_id);
+
+                    // TODO Find thumbnail url
 
                     // Struct for conversion to JSON object
                     let post_data: Post = Post {
@@ -351,7 +378,6 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
                 .value
                 .to_string()
                 .replace(r#"""#, ""); // " to nothing at all
-
             
             let file_name_split: Vec<_> = file_name.split(".").collect();
             file_name = file_name_split[0];
@@ -367,12 +393,25 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
 
             let last_id: Value = parsed_last_post["id"].clone();
             ////println!("{}", last_id.to_string());
+
+            if file_name.starts_with("thumbnail.") {
+                // TODO Open posts.json
+
+                // TODO Rewrite thumbnail path for latest id
+
+                // TODO Rewrite file
+            };            
             
             // Save each verified file to the folder
             let mut new_image: File = File::create("posts/".to_string() + &last_id.to_string().replace(r#"""#, "") + "/" + file_name + "." + extension).unwrap();
             new_image.write_all(&buf).unwrap();
 
-            // TODO Respond with relevant code
+            // Respond with relevant code
+            let mut resp: Response<std::io::Cursor<Vec<u8>>> = Response::from_string("Created");
+            resp = resp.with_status_code(201);
+            resp.add_header(Header::from_bytes(&b"Content-Type"[..], &b"text/plain"[..]).unwrap());
+            resp.add_header(Header::from_bytes(&b"Access-Control-Allow-Origin"[..], &b"*"[..]).unwrap());
+            request.respond(resp)?;
         }
     } else { // Sign in process, verify creds, send token
         println!("");

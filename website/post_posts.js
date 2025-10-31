@@ -25,6 +25,8 @@ let description_text;
 const protocol = "http://";
 const url1 = "127.0.0.1:5500";
 
+let thumbnail = "Thumbnail not set"; // Shouldn't even really need to assign this tbh.
+
 post_button.addEventListener("click", function(e) {
     getPostAttributes();
 });
@@ -115,14 +117,34 @@ function validateImages() { // Returns bool
     // Find image tags
     images_required = collectImageTags(); // This is an array [ should have used Typescript :( ]
 
+    if (files.includes("thumbnail.jpeg")) {
+        console.log("Thumbnail found!");
+        thumbnail = "thumbnail.jpeg";
+    } else if (files.includes("thumbnail.png")) {
+        console.log("Thumbnail found!");
+        thumbnail = "thumbnail.png";
+    } else if (files.includes("thumbnail.jpg")) {
+        console.log("Thumbnail found!");
+        thumbnail = "thumbnail.jpg";
+    } else if (files.includes("thumbnail.svg")) {
+        console.log("Thumbnail found!");
+        thumbnail = "thumbnail.svg";
+    } else {
+        console.warn("Thumbnail not found!");
+        return false
+    };
+
+    images_required.push(thumbnail);
+
     // CRITICAL: Check all images are actually images. Without, anything could be uploaded! (Like CPP or Rust)
-    // TODO Also have server side verifcation for this
+    // Also have server side verifcation for this
     iter = 0;
     while (iter < images_required.length) {
         if (file_type_regex.test(images_required[iter])) {
             console.log("File type check passed: " + (iter+1) + "/" + images_required.length);
         } else {
-            console.warn("File type check failed: " + (iter+1) + "/" + max);
+            console.warn("File type check failed: " + (iter+1) + "/" + images_required.length);
+            console.log("Failed with " + images_required[iter]);
             valid = false;
         };
 
@@ -156,24 +178,13 @@ function validateImages() { // Returns bool
         console.log("All required files found!");
     };
 
-    // Check thumbnail exists
-    if( // There's a better way to do this... [now case sensitive]
-        files.includes("thumbnail.jpeg")
-        | files.includes("thumbnail.png")
-        | files.includes("thumbnail.jpg")
-        | files.includes("thumbnail.svg")
-        ////| files.includes("thumbnail.xml")
-        ////| files.includes("Thumbnail.jpeg")
-        ////| files.includes("Thumbnail.png")
-        ////| files.includes("Thumbnail.jpg")
-        ////| files.includes("Thumbnail.svg")
-        ////| files.includes("Thumbnail.xml")
-    ) {
-        console.log("Thumbnail found!");
-    } else {
-        console.warn("Thumbnail not found!");
-        return false
-    };
+    // Check thumbnail exists and store its value for adding to images_required
+    /*
+    files.includes("thumbnail.jpeg")
+    | files.includes("thumbnail.png")
+    | files.includes("thumbnail.jpg")
+    | files.includes("thumbnail.svg")
+    */
 
     return true
 };
@@ -271,7 +282,7 @@ async function postNewPost(json_text, images_required) {
             return false
         };
 
-        console.log(file_name);
+        console.log("Sending " + file_name + "...");
 
         const image_response = await fetch(protocol + url1, {
             method: "POST",

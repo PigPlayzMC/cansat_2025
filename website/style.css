@@ -23,6 +23,15 @@
     margin-top: 10px;
 }
 
+.title_black {
+    font-size: 50px;
+    color: black;
+    max-width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+}
+
 .navigation {
     max-width: fit-content;
     margin-left: auto;

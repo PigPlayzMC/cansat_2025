@@ -6,17 +6,10 @@
     "content": "DEPRECATED - DO NOT USE",
     "date_created": "00/00/0000"
 },{
-  "post_id": "019a3166-1cf9-7623-b0c3-63375ce1a1af",
-  "title": "2: Really working now.",
-  "thumbnail": "posts/019a3166-1cf9-7623-b0c3-63375ce1a1af",
-  "description": "Pwease 2 1/2 1/2nd edition",
-  "content": "",
-  "date_created": "2025-10-29"
-},{
-  "post_id": "019a31c5-3b23-7481-9721-dd8e23d973b0",
-  "title": "2: Really working now.",
-  "thumbnail": "posts/019a31c5-3b23-7481-9721-dd8e23d973b0",
-  "description": "Pwease 2 1/2 1/2nd edition",
+  "post_id": "019a31db-5b63-7cf1-a524-5545d6c9b506",
+  "title": "Thumbnail test 1",
+  "thumbnail": "posts/019a31db-5b63-7cf1-a524-5545d6c9b506/thumbnail.png",
+  "description": "PLease 2 1/2 1/2nd edition",
   "content": "",
   "date_created": "2025-10-29"
 }]
