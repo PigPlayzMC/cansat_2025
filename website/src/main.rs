@@ -184,7 +184,7 @@ fn handle_get(request: Request) -> Result<(), Box<dyn std::error::Error + Send +
         let resp = Response::empty(403); // Could send 404 to obscure existence but this is open source
         let _ = request.respond(resp);
     } else { // We can and will share it
-        let response = if content_type.starts_with("image/") {
+        let response = if content_type.starts_with("image/") { // Image
             ////println!("Sending image...");
             match fs::read(&file_name) {
                 Ok(bytes) => { // images that must be read as bytes
@@ -197,7 +197,7 @@ fn handle_get(request: Request) -> Result<(), Box<dyn std::error::Error + Send +
                     match fs::read_to_string("default.svg") {
                         Ok(text) => { // text documents that can be read as strings
                             let mut resp = Response::from_string(text);
-                            resp.add_header(Header::from_bytes("Content-Type", content_type).unwrap());
+                            resp.add_header(Header::from_bytes("Content-Type", "image/svg+xml").unwrap());
                             resp.add_header(Header::from_bytes("Access-Control-Allow-Origin", "*").unwrap());
                             resp = resp.with_status_code(404);
                             resp
@@ -206,7 +206,7 @@ fn handle_get(request: Request) -> Result<(), Box<dyn std::error::Error + Send +
                     }
                 }
             }
-        } else {
+        } else { // Literally anything else...
             match fs::read_to_string(&file_name) {
                 Ok(text) => { // text documents that can be read as strings
                     let mut resp = Response::from_string(text);
@@ -218,7 +218,7 @@ fn handle_get(request: Request) -> Result<(), Box<dyn std::error::Error + Send +
                     match fs::read_to_string("404.html") {
                         Ok(text) => { // text documents that can be read as strings
                             let mut resp = Response::from_string(text);
-                            resp.add_header(Header::from_bytes("Content-Type", content_type).unwrap());
+                            resp.add_header(Header::from_bytes("Content-Type", "text/html").unwrap());
                             resp.add_header(Header::from_bytes("Access-Control-Allow-Origin", "*").unwrap());
                             resp = resp.with_status_code(404);
                             resp

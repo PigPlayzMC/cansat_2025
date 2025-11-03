@@ -97,7 +97,16 @@ a:hover {
     width: 64px;
     height: 64px;
     flex-shrink: 0;
+    padding: 0px;
     padding-top: 3px;
+    margin: 0%;
+}
+
+.post_thumbnail_image {
+    margin: 0px;
+    padding: 0px;
+    width: 64px;
+    height: 64px;
 }
 
 .post_text {

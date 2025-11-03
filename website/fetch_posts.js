@@ -96,6 +96,7 @@ function formatPostsHome(id_minimum, id_maximum, posts) {
         image_wrapper.className = "post_thumbnail";
 
         const image = document.createElement("img");
+        image.classList.add("post_thumbnail_image");
         image.src = posts[id].thumbnail;
 
         const text_wrapper = document.createElement("div");
