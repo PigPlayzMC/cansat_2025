@@ -1,3 +1,4 @@
+use core::{clone::Clone, convert::Into};
 #[forbid(unsafe_code)] // It's against the spirit of the language (and totally unneeded here)
 // TODO Move certain functions to different files; this is unprofessional
 // TODO Consider using a real database because these JSON files are completely insane
@@ -142,7 +143,7 @@ fn handle_get(request: Request) -> Result<(), Box<dyn std::error::Error + Send +
         path.trim_start_matches('/').to_string()
     };
 
-    let file_name: String = file_path.replace("website/", "");
+    let mut file_name: String = file_path.replace("website/", "");
 
     //TODO Ensure clicking one of our links in the header from a post, doesn't result in getting sent to a 404 page.
 
@@ -157,6 +158,7 @@ fn handle_get(request: Request) -> Result<(), Box<dyn std::error::Error + Send +
     // posts/example/128_bookwork.png
 
     ////println!("GET: {}", content);
+    let file_name_two: String = file_name.clone();
 
     let content_type = if file_name.ends_with(".html") { //TODO match?
         "text/html"
@@ -185,6 +187,12 @@ fn handle_get(request: Request) -> Result<(), Box<dyn std::error::Error + Send +
         let _ = request.respond(resp);
     } else { // We can and will share it
         let response = if content_type.starts_with("image/") { // Image
+            ////println!("Thumbnail request {}", file_name);
+            if file_name_two.contains("thumbnail") { // This is also a hack in case anyone wonders
+                file_name = file_name.replace(r#"%22"#, ""); // Don't even know why but it needs this
+            };
+            ////println!("Thumbnail request (amended) {}", file_name);
+            /// 
             ////println!("Sending image...");
             match fs::read(&file_name) {
                 Ok(bytes) => { // images that must be read as bytes
@@ -294,13 +302,11 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
                     // Create folder with same name for folders
                     let _ = fs::create_dir("posts/".to_owned() + &post_id);
 
-                    // TODO Find thumbnail url
-
                     // Struct for conversion to JSON object
                     let post_data: Post = Post {
                         post_id: post_id.clone(),
                         title: text_content.title,
-                        thumbnail: "posts/".to_string() + &post_id, // Path to thumbnail rather than actual thumbnail filename
+                        thumbnail: "posts/".to_string() + &post_id, // Updated upon reciept of thumbnail.file_extension
                         description: text_content.description,
                         content: "".to_string(), // ! Deprecated field - Do Not Use
                         date_created: Utc::now().date_naive().to_string(),
@@ -394,12 +400,32 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
             let last_id: Value = parsed_last_post["id"].clone();
             ////println!("{}", last_id.to_string());
 
-            if file_name.starts_with("thumbnail.") {
-                // TODO Open posts.json
+            // VV Already stripped of its extension at this point
+            if file_name.contains("thumbnail") {
+                println!("Thumbnail file found!");
+                // Open posts.json
+                let mut posts_json: Value = serde_json::from_str(&fs::read_to_string("posts/posts.json").unwrap()).unwrap();
 
-                // TODO Rewrite thumbnail path for latest id
+                // Rewrite thumbnail path for latest id
+                if let Some(posts) = posts_json.clone().as_array() {
+                    let mut counter = 0;
+                    for _post in posts {
+                        if posts_json[counter]["post_id"] == last_id {
+                            println!("Rewriting thumbnail attribute...");
+                            let mut path = serde_json::to_string(&posts_json[counter]["thumbnail"]).unwrap();
+                            path = path.as_str().replace(r#"""#, ""); // Remove "" from JSON import
+                            let thumbnail_path: String = path + "/" + file_name + "." + extension;
+                            println!("{}", thumbnail_path);
+                            posts_json[counter]["thumbnail"] = thumbnail_path.into();
+                        };
+                        counter += 1;
+                    };
+                };
 
-                // TODO Rewrite file
+                let posts_string = serde_json::to_string(&posts_json).unwrap();
+
+                // Rewrite file
+                let _ = fs::write("posts/posts.json", posts_string);
             };            
             
             // Save each verified file to the folder
@@ -425,14 +451,14 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
         match serde_json::from_slice::<Credentials>(&buf) {
             Ok(creds) => {
                 println!("Received credentials: {:?}", creds);
-                let mut credentials: Credentials = Credentials {
+                let credentials: Credentials = Credentials {
                     user: (creds.user),
                     pass: (creds.pass),
                     time: (creds.time)
                 };
 
-                //TODO Uncover secret meaning behind this because, as a genius, I never do random stuff, just forget my masterstrokes.
-                credentials.pass = credentials.pass; // ?? Whjat is this forr??
+                // TO/DO Uncover secret meaning behind this because, as a genius, I never do random stuff, just forget my masterstrokes.
+                ////credentials.pass = credentials.pass; // What is this for?
 
                 // Find account to sign into
                 let mut actual_credentials = TrueCredentials {
@@ -612,7 +638,6 @@ fn generate_token(user: String) -> String {
     let _ = fs::write("tokens_granted.json", tokens_string);
 
     // Not bothering to encrypt, a token is fine though HTTPS
-    // TODO encrypt :\
 
     return token_log.token;
 }
