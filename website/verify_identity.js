@@ -148,6 +148,7 @@ submit_button.addEventListener("click", function(e) {
     getUsernamePassword();
 });
 
+/*
 if (auth) { // Just comment this out when its not needed tbh
     // DEBUG
     console.error("DEBUG FEATURE LEFT ON!!! CEASE PRODUCTION USE IMMEDIATELY");
@@ -155,3 +156,4 @@ if (auth) { // Just comment this out when its not needed tbh
     localStorage.setItem("Token", "778a867a-08b8-44de-8c3e-0f96c5662a68"); // This is a random token that won't ever be valid (hopefully)
     // Should be hidden anyway
 };
+*/
