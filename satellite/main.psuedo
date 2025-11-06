@@ -1,0 +1,27 @@
+// Direct from source
+var altitude = fromSensorData
+var speed = fromSensorData
+
+// Computed
+var lastSpeeds = []
+
+// Dependent
+var legsDeployed = false
+
+main()
+
+function main() :
+    updateData()
+
+    if speed < 10 && altitude > 100 && launched == true && legsDeployed == false :
+        legsDeployed = deployLegs()
+
+    lastSpeeds.pop() // Remove last value
+    lastSpeeds.push(speed)
+
+function updateData() => alt, speed :
+    return newAlt newSpeed
+
+function deployLegs() => bool :
+    send 
+    return true // Deployed
