@@ -5,7 +5,7 @@ const file_type_regex = /\.jpeg|\.png|\.jpg|\.svg/;
 // ^^ There's server side support for xml so it may as well be a valid option.
 const image_tag_regex = /\[.+\.(jpeg|png|jpg|svg)]/;
 // ^^ [ + any+1 length of any characters + . + any valid file extension + ]
-// Requring all of this to be fulfilled reduces the chance of false positives
+// Requiring all of this to be fulfilled reduces the chance of false positives
 // I have just learnt what an XML is and no. Not an image; not invited.
 const jpeg_jpg_regex = /\.jpeg\.jpg/;
 const png_regex = /\.png/;
@@ -137,7 +137,7 @@ function validateImages() { // Returns bool
     images_required.push(thumbnail);
 
     // CRITICAL: Check all images are actually images. Without, anything could be uploaded! (Like CPP or Rust)
-    // Also have server side verifcation for this
+    // Also have server side verification for this
     iter = 0;
     while (iter < images_required.length) {
         if (file_type_regex.test(images_required[iter])) {

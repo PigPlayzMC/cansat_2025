@@ -12,7 +12,7 @@ const post_maker = document.getElementById("post_maker");
 
 const auth = true; // DEBUG ONLY PLEASE!!!!
 
-// regexs
+// regexes
 // VV Valid for RFC 5322 VV
 const email_regex = /(?:[a-z0-9!#$%&'*+\x2f=?^_`\x7b-\x7d~\x2d]+(?:\.[a-z0-9!#$%&'*+\x2f=?^_`\x7b-\x7d~\x2d]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9\x2d]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9\x2d]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9\x2d]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/
 const letter_regex = /[a-zA-Z]/;
@@ -58,7 +58,7 @@ function verifyPassword(password) {
         console.log("Password fail - Too short");
     };
     if (!letter_regex.test(password)) {
-        console.log("Pasword fail - No letters");
+        console.log("Password fail - No letters");
     };
     if (!capital_regex.test(password)) {
         console.log("Password fail - No capitals");
@@ -125,13 +125,13 @@ async function getUsernamePassword() {
         // Now post the username and password for serverside verification.
         postUsernamePassword(hashedUsername, hashedPassword, url);
     } else {
-        alert("Please enter a valid email adress.");
+        alert("Please enter a valid email address.");
     };
 };
 
 function formatTeamOnly() { // Also vulnerable to script injection probably
     /*
-    This is a convinience feature NOT a security feature. Access granting can only ever happen on a server side.
+    This is a convenience feature NOT a security feature. Access granting can only ever happen on a server side.
     Everything else is assumed tampered with by either inspect element or malicious request creation. This simply
     doesn't let people write a post without logging in previously (in theory). Someone will probably feel special
     and like they hacked us right up until the time they have to submit the post and they don't have a token, or

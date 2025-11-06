@@ -192,7 +192,7 @@ fn handle_get(request: Request) -> Result<(), Box<dyn std::error::Error + Send +
                 file_name = file_name.replace(r#"%22"#, ""); // Don't even know why but it needs this
             };
             ////println!("Thumbnail request (amended) {}", file_name);
-            /// 
+
             ////println!("Sending image...");
             match fs::read(&file_name) {
                 Ok(bytes) => { // images that must be read as bytes
@@ -255,7 +255,7 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
         .headers() // The meta data
         .iter() // for _ in ___
         .find(|h| h.field.equiv("Content-Type")) // Where the data is about content-type
-        .unwrap() // And no error has occured
+        .unwrap() // And no error has occurred
         .to_string() // As a string
         .replace("Content-Type: ", ""); // Remove "Content-Type: "
     ////println!("{}", content_type);
@@ -306,7 +306,7 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
                     let post_data: Post = Post {
                         post_id: post_id.clone(),
                         title: text_content.title,
-                        thumbnail: "posts/".to_string() + &post_id, // Updated upon reciept of thumbnail.file_extension
+                        thumbnail: "posts/".to_string() + &post_id, // Updated upon receipt of thumbnail.file_extension
                         description: text_content.description,
                         content: "".to_string(), // ! Deprecated field - Do Not Use
                         date_created: Utc::now().date_naive().to_string(),
@@ -462,7 +462,7 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
 
                 // Find account to sign into
                 let mut actual_credentials = TrueCredentials {
-                    user: "default".to_string(), //Not valid so no chance of natural occurence also hashed so dont be stupid
+                    user: "default".to_string(), //Not valid so no chance of natural occurrence also hashed so don't be stupid
                     pass: "default".to_string(),
                     uuid: "default".to_string(),
                 };
@@ -555,7 +555,7 @@ fn handle_post(mut request: Request) -> Result<(), Box<dyn std::error::Error + S
     Ok(())
 }
 
-#[allow(dead_code)] // Because this is a very useul debug function that I'm not commenting out
+#[allow(dead_code)] // Because this is a very useful debug function that I'm not commenting out
 fn new_credentials(email: String, password: String, ) -> Result<TrueCredentials, Box<dyn std::error::Error>> {
     let hashed_email = hash_string(email);
     let once_hashed_password = hash_string(password);
@@ -612,7 +612,7 @@ fn generate_token(user: String) -> String {
     let token: Uuid = Uuid::new_v4(); // New random uuid of 16 bytes
     let token_string: String = token.to_string(); // Stwing!
 
-    // Create log of token generated, user3 authed, time done, time expires (time gened + 30m)
+    // Create log of token generated, user3 authed, time done, time expires (time genned + 30m)
     let now: chrono::DateTime<Utc> = Utc::now();
     let time: i64 = now.timestamp();
     let expiry: i64 = (now + Duration::minutes(30)).timestamp(); // 30 minutes to make a post should be fine but copy paste was invented for a reason
@@ -714,7 +714,7 @@ fn format_content(content: String, post_id: String) -> String {
     let mut content_split_replaced: Vec<String> = vec![];
     while iter < content_split_whitespace.len() {
         let content_substring: String;
-        ////println!("Seperated whitespace: {}", content_split_whitespace[iter]);
+        ////println!("Separated whitespace: {}", content_split_whitespace[iter]);
         if image_tag_regex.is_match(content_split_whitespace[iter]) { // Image tag -> refactor to use HTML standards
             // Altered to include actual path, likely using post_id folder when image post handling is added
             let path: String = r#"<img src=""#.to_string() + &post_id + "/";
@@ -785,7 +785,7 @@ fn verify_token(mut token: String) -> bool { // Check token against tokens_grant
         };
     }; // Assume this won't fail...
 
-    println!(""); // Seperates token validation dialog from file creation dialog that follows.
+    println!(""); // Separates token validation dialog from file creation dialog that follows.
 
     return token_accepted
 }
