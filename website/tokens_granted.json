@@ -3,9 +3,4 @@
   "user": "hashed_email",
   "time_done": "seconds from epoch",
   "expires": "time_done + 30 minutes"
-},{
-  "token": "778a867a-08b8-44de-8c3e-0f96c5662a68",
-  "user": "DEBUG",
-  "time_done": 0,
-  "expires": 9223372036854775807
 }]
