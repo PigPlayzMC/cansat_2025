@@ -12,7 +12,7 @@ const png_regex = /\.png/;
 const svg_regex = /\.svg/;
 
 // Attributes
-//TODO constant document references
+// constant document references
 const title = document.getElementById("title_box");
 const content = document.getElementById("content_box");
 const description = document.getElementById("description_box");
@@ -55,6 +55,7 @@ function validateTexts() { // Returns bool
         console.log("Title length check passed!")
     } else {
         console.warn("Title length check failed!");
+        post_button.disabled = false;
         return false
     };
 
@@ -62,6 +63,7 @@ function validateTexts() { // Returns bool
         console.log("Content length check passed!")
     } else {
         console.warn("Content length check failed!");
+        post_button.disabled = false;
         return false
     };
 
@@ -69,6 +71,7 @@ function validateTexts() { // Returns bool
         console.log("Description length check passed!");
     } else {
         console.warn("Description length check failed!");
+        post_button.disabled = false;
         return false
     };
 
@@ -133,6 +136,7 @@ function validateImages() { // Returns bool
         thumbnail = "thumbnail.svg";
     } else {
         console.warn("Thumbnail not found!");
+        post_button.disabled = false;
         return false
     };
 
@@ -154,6 +158,7 @@ function validateImages() { // Returns bool
     };
 
     if (!valid) {
+        post_button.disabled = false;
         return false
     } else {
         console.log("File type checking passed!");
@@ -175,6 +180,7 @@ function validateImages() { // Returns bool
     };
 
     if (!images_present) {
+        post_button.disabled = false;
         return false
     } else {
         console.log("All required files found!");
@@ -252,12 +258,14 @@ async function postNewPost(json_text, images_required) {
             if (text_response.status == 403) {
                 alert("Invalid token. Please copy work then reload to log in again.");
             };
+            post_button.disabled = false;
             return false
         } else {
             console.log("Text content posted!");
         };
     } catch {
         console.error("Failed to post text contents");
+        post_button.disabled = false;
         return false
     };
 
@@ -301,6 +309,7 @@ async function postNewPost(json_text, images_required) {
             if (image_response.status == 403) {
                 alert("Invalid token. Please copy work then reload to log in again.");
             };
+            post_button.disabled = false;
             return false
         } else {
             console.log("Image content posted: " + (iter+1) + "/" + images_required.length);
@@ -311,4 +320,5 @@ async function postNewPost(json_text, images_required) {
     };
 
     alert("Post successfully posted!\nWell done."); // Job done!
+    post_button.disabled = false;
 };
