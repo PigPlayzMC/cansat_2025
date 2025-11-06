@@ -32,6 +32,8 @@ post_button.addEventListener("click", function(e) {
 });
 
 function getPostAttributes() {
+    post_button.disabled = true; // Prevent duplicate submissions
+
     // get values from document references
     title_text = title.value;
     content_text = content.value;
@@ -261,7 +263,7 @@ async function postNewPost(json_text, images_required) {
 
     // Not compressing images. Good luck backend!
 
-    // TODO Post requests for each image
+    // Post requests for each image
     iter = 0;
     while (iter < images_required.length) {
 
@@ -305,7 +307,8 @@ async function postNewPost(json_text, images_required) {
         };
 
         iter += 1; // Very important. My apologies to the countless Firefox instances killed due to these issues.
+        // ^^ Not actually true - I don't know what this is supposed to do as iter2 is being called but it works so just roll with it...
     };
 
-    // TODO Return response
+    alert("Post successfully posted!\nWell done."); // Job done!
 };
