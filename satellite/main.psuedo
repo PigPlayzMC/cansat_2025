@@ -1,27 +1,46 @@
 // Direct from source
-var altitude = fromSensorData
-var speed = fromSensorData
+var data = []
 
 // Computed
 var lastSpeeds = []
 
+// Preset
+var thresholdAltitude = 100
+
 // Dependent
+var parachuteDeployed = false
 var legsDeployed = false
+
+// To send
+var returnData = [altitude, speed, acceleration]
 
 main()
 
 function main() :
-    updateData()
+    data = updateData
 
-    if speed < 10 && altitude > 100 && launched == true && legsDeployed == false :
-        legsDeployed = deployLegs()
+    if launched == false && speed > 5 : // Account for small movements while still enabling in time
+        launched = true
+    else if launched == true && altitude > thresholdAltitude && speed > lastSpeeds[5] : // Accelerating downwards
+        parachuteDeployed = deployParachute()
+        legsDeployed = deployLegs()    
 
-    lastSpeeds.pop() // Remove last value
+    transmitData( returnData ) // Send data to the base station
+
+    if lastSpeeds.length == 5 : // If lastSpeeds array is already full
+        lastSpeeds.pop(0) // Remove last value
     lastSpeeds.push(speed)
 
 function updateData() => alt, speed :
-    return newAlt newSpeed
+    return [readPin1, readPin2]
+
+function deployParachute() => bool :
+    sendPin1
+    return true
 
 function deployLegs() => bool :
-    send 
+    sendPin2
     return true // Deployed
+
+function transmitData( data ) :
+    send
