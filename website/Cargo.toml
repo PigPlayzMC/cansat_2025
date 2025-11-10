@@ -1,0 +1,15 @@
+[package]
+name = "webserver"
+version = "0.0.1"
+edition = "2024"
+
+[dependencies]
+argon2 = { version = "0.5.3", features = ["std"] } # Rand is not required, we use UUIDs
+chrono = "0.4.42"
+hex = "0.4.3"
+regex = "1.12.2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.145"
+sha2 = "0.10.9"
+tiny_http = "0.12.0"
+uuid = { version = "1.18.1", features = ['v4', 'v7']} # v4 = random (good for hashing) v7 = time (good for ids)

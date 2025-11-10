@@ -1,6 +1,6 @@
 # Todo list
 
-This is a todo list.
+This is a todo list. Please tag yourself in assigned items to ensure efficiency.
 
 ## Website
 
@@ -10,14 +10,22 @@ This is a todo list.
 - About page
 - Header [@PigPlayzMC]
 - Footer
-- Creation of posts page
+- Creation of posts page [@PigPlayzMC]
 - Get posts from server [@PigPlayzMC]
+- Fix issue where title is 100vw rather than 100% actual displayed area, exaccerbating scrollbar issue [@PigPlayzMC]
+- Folderisation to increase file system legibility [@PigPlayzMC] *LOW PRIORITY*
+- Mobile formatting
+- Dedicated 404 page [@PigPlayzMC]
 
-## Server ()
+## Server [@PigPlayzMC]
 
-- Decide language (Rust is the correct answer)
-- Add posts to server
-- Recall posts from server
+- Decide language (Rust is the correct answer) [@PigPlayzMC]
+- Add posts to server [@PigPlayzMC]
+- Recall posts from server [@PigPlayzMC]
+- Literally everything else [@PigPlayzMC]
+- Verify submitted files are ONLY images [@PigPlayzMC]
+- Fix file pathing [@PigPlayzMC]
+- Support for dedicated 404 page [@PigPlayzMC] {BLOCKED}
 
 ## CanSat code
 

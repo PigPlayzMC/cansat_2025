@@ -1,7 +1,11 @@
+.hidden {
+    display: none;
+}
+
 .header {
     position: absolute;
     height: 90px;
-    width: 100vw;
+    width: 100%; /* TODO Alter this so only one scroll bar appears when the height is greater than 100% vh - Wait no, fixed it!*/
     background-color: cadetblue;
     margin: 0px;
     padding: 0px;
@@ -13,6 +17,15 @@
 .title {
     font-size: 50px;
     color: white;
+    max-width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+}
+
+.title_black {
+    font-size: 50px;
+    color: black;
     max-width: fit-content;
     margin-left: auto;
     margin-right: auto;
@@ -33,6 +46,7 @@ a {
     color: white;
     text-decoration: none;
     padding: 5px;
+    padding-top: 0px;
     padding-bottom: 0px;
 }
 
@@ -57,4 +71,95 @@ a:hover {
     border-style: dashed;
     border-top: 1px;
     border-bottom: 1px;
+}
+
+.posts_loading {
+    display: block;
+}
+
+.post {
+    display: flex;
+    color:black !important;
+    background-color: white !important;
+    border: 0px;
+    border-bottom: 1px;
+    border-style: outset;
+}
+
+.post_a {
+    display: flex;
+    color:black !important;
+    background-color: white !important;
+    border: 0px;
+}
+
+.post_thumbnail {
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+    padding: 0px;
+    padding-top: 3px;
+    margin: 0%;
+}
+
+.post_thumbnail_image {
+    margin: 0px;
+    padding: 0px;
+    width: 64px;
+    height: 64px;
+}
+
+.post_text {
+    padding-left: 5px;
+    width: 44vw; /* Ensures that all of the post is clickable as a link */
+    border: none;
+}
+
+/* May have a use later so archived
+.post_title {
+
+}
+*/
+
+.post_description {
+    border: none;
+}
+
+/* Team only section (of the website, this isn't secret css) */
+
+.security {
+    display: flex;
+    max-width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.post_maker {
+    display: none;
+    flex-direction: column;
+    max-width: 80vw;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.explainer {
+    font-family:Verdana, Geneva, Tahoma, sans-serif;
+}
+
+.title_box {
+    width: 80vw;
+    height: 20px;
+    margin: 0px;
+    margin-top: 20px;
+    margin-bottom: 5px;
+}
+
+.content_box {
+    width: 80vw;
+    margin: 0px;
+    margin-bottom: 5px;
+}
+
+.post_button {
+    margin-top: 5px;
 }
