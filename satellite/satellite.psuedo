@@ -1,8 +1,14 @@
+use time // For timestamps
+
 // Direct from source
 var data = []
+/*
+- pressure
+- temperature
+*/
 
 // Computed
-var lastSpeeds = []
+var lastVelocitys = []
 
 // Preset
 var thresholdAltitude = 100
@@ -13,7 +19,7 @@ var parachuteDeployed: bool = false
 var legsDeployed: bool = false
 
 // To send
-var returnData = [altitude, speed]
+var returnData = [altitude, velocity]
 // ^ Acceleration will be worked out again at the base station to reduce usage
 
 main()
@@ -21,33 +27,43 @@ main()
 function main() :
     while lifetime : // Loop to repeat
         data = updateData();
-        speed = data[0];
-        speed = data[1];
+        pressure = data[0];
+        temperature = data[1];
 
-        if launched == false && speed > 5 : // Account for small movements while still enabling in time
+        // Calculate altitude
+
+
+        // Calculate velocity
+        
+
+        if launched == false && velocity > 5 : // Account for small movements while still enabling in time
             launched = true
-        else if launched == true && altitude > thresholdAltitude && speed > lastSpeeds[5] : // Accelerating downwards
+        else if launched == true && altitude > thresholdAltitude && velocity > lastVelocitys[5] : // Accelerating downwards
             parachuteDeployed = deployParachute()
             legsDeployed = deployLegs()
-        else if launched == true && speed == 0 && lastSpeeds.sum == 0 : // We have arrived
+        else if launched == true && velocity == 0 && lastVelocitys.sum == 0 : // We have arrived
             lifetime = false // We have landed!
         endIf
 
-        returnData = data.
+        returnData = data;
+        epochTime = time.GetCurrentTime();
+        returnData.push(epochTime);
 
         transmitData( returnData ) // Send data to the base station
 
-        if lastSpeeds.length == 5 : // If lastSpeeds array is already full
-            lastSpeeds.pop(0) // Remove last value
+        if lastVelocitys.length == 5 : // If lastVelocitys array is already full
+            lastVelocitys.pop(0) // Remove last value
         endIf
 
-        lastSpeeds.push(speed)
+        lastVelocitys.insert(0, velocity);
+
+        sleep(1000); // Wait 1 second (Revise in actual program to account for processing times)
     endWhile
 
     // Could do some fun behaviour here to further secondary mission such as locating the landed CanSat
 endFunction
 
-function updateData() => alt, speed :
+function updateData() => pressure, temperature :
     return [readPin1, readPin2]
 endFunction
 
