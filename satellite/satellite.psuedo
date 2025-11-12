@@ -9,17 +9,20 @@ var thresholdAltitude = 100
 
 // Dependent
 var lifetime = true // Disabled upon landing
-var parachuteDeployed = false
-var legsDeployed = false
+var parachuteDeployed: bool = false
+var legsDeployed: bool = false
 
 // To send
-var returnData = [altitude, speed, acceleration]
+var returnData = [altitude, speed]
+// ^ Acceleration will be worked out again at the base station to reduce usage
 
 main()
 
 function main() :
     while lifetime : // Loop to repeat
-        data = updateData
+        data = updateData();
+        speed = data[0];
+        speed = data[1];
 
         if launched == false && speed > 5 : // Account for small movements while still enabling in time
             launched = true
@@ -27,8 +30,10 @@ function main() :
             parachuteDeployed = deployParachute()
             legsDeployed = deployLegs()
         else if launched == true && speed == 0 && lastSpeeds.sum == 0 : // We have arrived
-            lifetime = false
+            lifetime = false // We have landed!
         endIf
+
+        returnData = data.
 
         transmitData( returnData ) // Send data to the base station
 
@@ -57,5 +62,5 @@ function deployLegs() => bool :
 endFunction
 
 function transmitData( data ) :
-    sendPing1
+    sendPin1
 endFunction

@@ -1,0 +1,19 @@
+var launched = false;
+var data = []; // Array of arrays recieved
+
+main();
+
+function main() :
+    while timeSinceLastReciept < 5000 || launched == false: // If we haven't recieved an update in 5 seconds, the CanSat has probably "landed"
+        let newData = getDataFromReceiver();
+
+        if data != [] : // There is actually a transmition
+            data.push(getDataFromReceiver());
+            launched = true; // We are recieving, therefore we have launched.
+        endIf
+    endWhile
+
+    print("CanSat has ceased transmition. Exiting loop...");
+
+    // Consider plotting a graph, data representation is what Python is good at
+endFunction
