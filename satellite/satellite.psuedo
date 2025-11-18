@@ -8,7 +8,7 @@ var data = []
 */
 
 // Computed
-var lastVelocitys = []
+var lastData = []; // [alitude, speed, sampleTime]
 
 // Preset
 var thresholdAltitude = 100
@@ -33,10 +33,11 @@ function main() :
         // Calculate altitude
         // pressure = 101325 * (1-2.25577*10^-5 * (altitude))^5.25588
         // altitude = (5.25588root(pressure/101325) - 1)/-2.2577*10^-5
-        let altitude = (5.25588root(pressure/101325) - 1)/-2.2577*10^-5
+        var altitude = (5.25588root(pressure/101325) - 1)/-2.2577*10^-5
 
         // Calculate velocity
-        
+        var velocity = abs(altitude-lastData[lastData.length][0] / time.GetCurrentTime() - lastData[lastData.length][2])
+        // |delta D / delta T|
 
         if launched == false && velocity > 5 : // Account for small movements while still enabling in time
             launched = true
@@ -48,6 +49,8 @@ function main() :
         endIf
 
         returnData = data;
+        returnData.push(altitude);
+        returnData.push(velocity);
         epochTime = time.GetCurrentTime();
         returnData.push(epochTime);
 
