@@ -1,0 +1,24 @@
+use time;
+
+var launched = false;
+var data = []; // Array of arrays recieved
+
+main();
+
+function main() :
+    while (GetCurrentTime - 5) < data[data.len][data][0] || launched == false: // If we haven't recieved an update in 5 seconds, the CanSat has probably "landed"
+        let newData = getDataFromReceiver();
+
+        if data != [] : // There is actually a transmission
+            data.push(getDataFromReceiver());
+            launched = true; // We are recieving, therefore we have launched.
+        endIf
+
+        // a = (v-u)/t = deltaV / deltaT
+        var acceleration = (data[data.len][1] - data[data.len - 1][1]) / (data[data.len][0] - data[data.len - 1][0]);
+    endWhile
+
+    print("CanSat has ceased transmission. Exiting loop...");
+
+    // Consider plotting a graph, data representation is what Python is good at
+endFunction
