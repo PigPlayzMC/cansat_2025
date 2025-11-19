@@ -6,6 +6,7 @@ import time;
 temperature_pin = machine.ADC(4) # Internal temperature sensor
 pressure_pin = machine.ADC(0) # Placeholder
 transmission_pin = machine.ADC(0) # Placeholder
+led_pin = Pin("LED", Pin.OUT) # type: ignore
 
 # === Conversions ===
 # Not all sensors output in a sensible format...
@@ -28,9 +29,13 @@ def get_temperature():
 # END
 
 def transmit_data():
+    led_pin.toggle() # On - Allows for debugging. Remove if annoying.
+
     return_data = [] # Placeholder values
 
     transmission_pin.value(return_data) # Possible implementation
+
+    led_pin.toggle() # Off
 # END
 
 while lifetime:
