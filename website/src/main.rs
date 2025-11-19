@@ -78,7 +78,6 @@ struct Post {
     content: String, // ! Content logging is deprecated
     date_created: String, // convert from NaiveDate
 }
-// KLM OY58UD < remove after flight
 
 // At some point this broke Live Server's auto reload function so just open like normal, run the server, then manually reload
 fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -114,7 +113,7 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("Server at http://{} - Fully operational!", url);
 
     ////println!("Attempting to create example credentials...");
-    ////let _ = new_credentials("charliehbird@gmail.com".to_string(), "password".to_string());
+    ////let _ = new_credentials("example@mail.com".to_string(), "password".to_string());
     ////println!("Example credentials created!");
 
     for request in server.incoming_requests() {
