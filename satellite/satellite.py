@@ -9,7 +9,7 @@ transmission_pin = machine.ADC(0) # Placeholder
 led_pin = Pin("LED", Pin.OUT) # type: ignore
 
 # === Conversions ===
-# Not all sensors output in a sensible format...
+# Not all sensors output in a usable format...
 temperature_conversion = 3.3 / (65535) # From Vbe voltage to degrees C (with later offset)
 
 # === Dependent variables ===
