@@ -14,6 +14,8 @@ false = False
 led = d.DigitalInOut(board.LED)
 led.direction = d.Direction.OUTPUT
 
+packet_count = 0
+
 while true:
     led.value = false
 
@@ -26,5 +28,6 @@ while true:
 
     # Transmit data
     rfm9x.send(data)
+    packet_count++
 
     t.sleep(0.5)
