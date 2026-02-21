@@ -4,8 +4,8 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, Input, Output, html
 import plotly.express as px
-import plotly.graph_objects as go
 import pandas as pd
+
 
 # loading data
 def load_data():
@@ -17,6 +17,7 @@ def load_data():
     data["pressure_hPa"] = pd.to_numeric(data["pressure_hPa"], errors='coerce')
     return data 
 
+
 data = load_data()
 
 # calculate avgs and totals
@@ -24,19 +25,6 @@ time_taken = len(data)
 avg_speed = np.mean(data["speed_m_s"]).round(1)
 avg_temp = np.mean(data["temperature_C"]).round(1)
 avg_pressure = np.mean(data["pressure_hPa"]).round(1)
-
-def return_figure_with_time_as_x(y_name):
-    return go.Figure(
-        data = go.Bar(x = data["time_sec"], y = data[y_name])
-    )
-
-speed_figure = return_figure_with_time_as_x("speed_m_s")
-
-temp_figure = return_figure_with_time_as_x("temperature_C")
-
-press_figure = return_figure_with_time_as_x("pressure_hPa")
-
-alt_figure = return_figure_with_time_as_x("altitude_m")
 
 # initialisation of web app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -60,8 +48,12 @@ app.layout = dbc.Container([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H4("Speed readings (m/s)", className="card-title"),
-                    dcc.Graph(id="speed-over-time", figure = speed_figure)
+                    html.H4("Speed readings", className="card-title"),
+                    dcc.Graph(id="speedgraph"),
+                    dcc.Interval(
+                        id="updatespeed",
+                        interval=1000,
+                        n_intervals=0),
                 ])
             ])
         ], width=6),
@@ -69,8 +61,12 @@ app.layout = dbc.Container([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H4("Temperature readings (°C)", className="card-title"),
-                    dcc.Graph(id="temperature-over-time", figure = temp_figure)
+                    html.H4("Temperature readings", className="card-title"),
+                    dcc.Graph(id="temperaturegraph"),
+                    dcc.Interval(
+                        id="updatetemperature",
+                        interval=1000,
+                        n_intervals=0),
                 ])
             ])
         ], width=6),
@@ -78,8 +74,12 @@ app.layout = dbc.Container([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H4("Pressure readings (hPa)", className="card-title"),
-                    dcc.Graph(id="pressure-over-time", figure = press_figure)
+                    html.H4("Pressure readings", className="card-title"),
+                    dcc.Graph(id="pressuregraph"),
+                    dcc.Interval(
+                        id="updatepressure",
+                        interval=1000,
+                        n_intervals=0),
                 ])
             ])
         ], width=6),
@@ -87,8 +87,12 @@ app.layout = dbc.Container([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H4("Altitude readings (m)", className="card-title"),
-                    dcc.Graph(id="altitude-over-time", figure = alt_figure)
+                    html.H4("Altitude readings", className="card-title"),
+                    dcc.Graph(id="altitudegraph"),
+                    dcc.Interval(
+                        id="updatealtitude",
+                        interval=1000,
+                        n_intervals=0),
                 ])
             ])
         ], width=6),
@@ -97,8 +101,39 @@ app.layout = dbc.Container([
 
 
 # callbacks
+@app.callback(
+    Output('speedgraph','figure'),
+    Input('updatespeed','n_intervals')
+)
+def update_speed_graph(n):
+    fig = px.line(data, x="time_sec", y="speed_m_s", title="Speed vs Time")
+    return fig
+
+@app.callback(
+    Output('temperaturegraph','figure'),
+    Input('updatetemperature','n_intervals')
+)
+def update_temperature_graph(n):
+    fig = px.line(data, x="time_sec", y="temperature_C", title="Temperature vs Time")
+    return fig
+
+@app.callback(
+    Output('pressuregraph','figure'),
+    Input('updatepressure','n_intervals')
+)
+def update_pressure_graph(n):
+    fig = px.line(data, x="time_sec", y="pressure_hPa", title="Pressure vs Time")
+    return fig
+
+@app.callback(
+    Output('altitudegraph','figure'),
+    Input('updatealtitude','n_intervals')
+)
+def update_altitude_graph(n):
+    fig = px.line(data, x="time_sec", y="altitude_m", title="Altitude vs Time")
+    return fig
 
 
 # run the app
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
