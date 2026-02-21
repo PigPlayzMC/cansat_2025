@@ -4,6 +4,7 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, Input, Output, html
 import plotly.express as px
+import plotly.graph_objects as go
 import pandas as pd
 
 # loading data
@@ -16,7 +17,6 @@ def load_data():
     data["pressure_hPa"] = pd.to_numeric(data["pressure_hPa"], errors='coerce')
     return data 
 
-
 data = load_data()
 
 # calculate avgs and totals
@@ -24,6 +24,19 @@ time_taken = len(data)
 avg_speed = np.mean(data["speed_m_s"]).round(1)
 avg_temp = np.mean(data["temperature_C"]).round(1)
 avg_pressure = np.mean(data["pressure_hPa"]).round(1)
+
+def return_figure_with_time_as_x(y_name):
+    return go.Figure(
+        data = go.Bar(x = data["time_sec"], y = data[y_name])
+    )
+
+speed_figure = return_figure_with_time_as_x("speed_m_s")
+
+temp_figure = return_figure_with_time_as_x("temperature_C")
+
+press_figure = return_figure_with_time_as_x("pressure_hPa")
+
+alt_figure = return_figure_with_time_as_x("altitude_m")
 
 # initialisation of web app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -47,8 +60,8 @@ app.layout = dbc.Container([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H4("Speed readings", className="card-title"),
-                    dcc.Graph(id="speed-over-time")
+                    html.H4("Speed readings (m/s)", className="card-title"),
+                    dcc.Graph(id="speed-over-time", figure = speed_figure)
                 ])
             ])
         ], width=6),
@@ -56,8 +69,8 @@ app.layout = dbc.Container([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H4("Temperature readings", className="card-title"),
-                    dcc.Graph(id="temperature-over-time")
+                    html.H4("Temperature readings (°C)", className="card-title"),
+                    dcc.Graph(id="temperature-over-time", figure = temp_figure)
                 ])
             ])
         ], width=6),
@@ -65,8 +78,8 @@ app.layout = dbc.Container([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H4("Pressure readings", className="card-title"),
-                    dcc.Graph(id="pressure-over-time")
+                    html.H4("Pressure readings (hPa)", className="card-title"),
+                    dcc.Graph(id="pressure-over-time", figure = press_figure)
                 ])
             ])
         ], width=6),
@@ -74,8 +87,8 @@ app.layout = dbc.Container([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H4("Altitude readings", className="card-title"),
-                    dcc.Graph(id="altitude-over-time")
+                    html.H4("Altitude readings (m)", className="card-title"),
+                    dcc.Graph(id="altitude-over-time", figure = alt_figure)
                 ])
             ])
         ], width=6),
