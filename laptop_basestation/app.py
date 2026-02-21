@@ -106,7 +106,8 @@ app.layout = dbc.Container([
     Input('updatespeed','n_intervals')
 )
 def update_speed_graph(n):
-    fig = px.line(data, x="time_sec", y="speed_m_s", title="Speed vs Time")
+    fig = px.line(data, x="time_sec", y="speed_m_s", title=f"Current Speed: {data.tail(1)['speed_m_s'].values[0]} m/s")
+    fig.update_layout(xaxis_title="Time (seconds)", yaxis_title="Speed (m/s)")
     return fig
 
 @app.callback(
@@ -114,7 +115,8 @@ def update_speed_graph(n):
     Input('updatetemperature','n_intervals')
 )
 def update_temperature_graph(n):
-    fig = px.line(data, x="time_sec", y="temperature_C", title="Temperature vs Time")
+    fig = px.line(data, x="time_sec", y="temperature_C", title=f"Current Temperature: {data.tail(1)['temperature_C'].values[0]} °C")
+    fig.update_layout(xaxis_title="Time (seconds)", yaxis_title="Temperature (°C)")
     return fig
 
 @app.callback(
@@ -122,7 +124,8 @@ def update_temperature_graph(n):
     Input('updatepressure','n_intervals')
 )
 def update_pressure_graph(n):
-    fig = px.line(data, x="time_sec", y="pressure_hPa", title="Pressure vs Time")
+    fig = px.line(data, x="time_sec", y="pressure_hPa", title=f"Current Pressure: {data.tail(1)['pressure_hPa'].values[0]} hPa")
+    fig.update_layout(xaxis_title="Time (seconds)", yaxis_title="Pressure (hPa)")
     return fig
 
 @app.callback(
@@ -130,9 +133,9 @@ def update_pressure_graph(n):
     Input('updatealtitude','n_intervals')
 )
 def update_altitude_graph(n):
-    fig = px.line(data, x="time_sec", y="altitude_m", title="Altitude vs Time")
+    fig = px.line(data, x="time_sec", y="altitude_m", title=f"Current Altitude: {data.tail(1)['altitude_m'].values[0]} meters")
+    fig.update_layout(xaxis_title="Time (seconds)", yaxis_title="Altitude (meters)")
     return fig
-
 
 # run the app
 if __name__ == "__main__":
