@@ -49,11 +49,7 @@ app.layout = dbc.Container([
             dbc.Card([
                 dbc.CardBody([
                     html.H4("Speed readings", className="card-title"),
-                    dcc.Graph(id="speedgraph"),
-                    dcc.Interval(
-                        id="updatespeed",
-                        interval=1000,
-                        n_intervals=0),
+                    dcc.Graph(id="speed-over-time")
                 ])
             ])
         ], width=6),
@@ -62,11 +58,7 @@ app.layout = dbc.Container([
             dbc.Card([
                 dbc.CardBody([
                     html.H4("Temperature readings", className="card-title"),
-                    dcc.Graph(id="temperaturegraph"),
-                    dcc.Interval(
-                        id="updatetemperature",
-                        interval=1000,
-                        n_intervals=0),
+                    dcc.Graph(id="temperature-over-time")
                 ])
             ])
         ], width=6),
@@ -75,11 +67,7 @@ app.layout = dbc.Container([
             dbc.Card([
                 dbc.CardBody([
                     html.H4("Pressure readings", className="card-title"),
-                    dcc.Graph(id="pressuregraph"),
-                    dcc.Interval(
-                        id="updatepressure",
-                        interval=1000,
-                        n_intervals=0),
+                    dcc.Graph(id="pressure-over-time")
                 ])
             ])
         ], width=6),
@@ -88,11 +76,7 @@ app.layout = dbc.Container([
             dbc.Card([
                 dbc.CardBody([
                     html.H4("Altitude readings", className="card-title"),
-                    dcc.Graph(id="altitudegraph"),
-                    dcc.Interval(
-                        id="updatealtitude",
-                        interval=1000,
-                        n_intervals=0),
+                    dcc.Graph(id="altitude-over-time")
                 ])
             ])
         ], width=6),
