@@ -1,33 +1,27 @@
-import digitalio as d
+import digitalio as dg
 import board as b
 import time as t
 
-# Local imports
+# Internal imports
 import bmp280
-import rfm9x
+import radio
 
-# QoL
+# Sanity ensuring measures
 true = True
 false = False
 
-# LED for sanity check
-led = d.DigitalInOut(board.LED)
-led.direction = d.Direction.OUTPUT
+led = dg.DigitalInOut(b.GP25)
+led.direction = dg.Direction.OUTPUT
 
-packet_count = 0
+print("CanSat ready!")
+radio.send("CanSat ready!")
 
 while true:
     led.value = false
-
     t.sleep(0.5)
     led.value = true
-
-    # Collect data
-    bmp280.display_environment() # TODO Remove debug
-    data = bmp280.read_temp_pressure_array()
-
-    # Transmit data
-    rfm9x.send(data)
-    packet_count++
-
     t.sleep(0.5)
+
+    temperature = bmp280.temperature()
+    pressure = bmp280.pressure()
+    print(f"Temperature: {temperature}˚c\nPressure: {pressure}")
