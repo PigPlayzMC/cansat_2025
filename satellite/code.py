@@ -25,3 +25,5 @@ while true:
     temperature = bmp280.temperature()
     pressure = bmp280.pressure()
     print(f"Temperature: {temperature}˚c\nPressure: {pressure}")
+
+    radio.send(f"{temperature} {pressure}")
