@@ -25,12 +25,25 @@ while true:
     led.value = true
     t.sleep(0.5)
 
+    current_time = t.ticks_ms()
+
     temperature = bmp280.temperature()
     pressure = bmp280.pressure()
     altitude = calculate_altitude(pressure * 100)
-    #print(f"Temperature: {temperature}˚c\nPressure: {pressure}")
 
-    radio.send(f"{temperature} {pressure}")
+    if last_data is not None:
+        delta_alt = altitude - last_data[2]
+        delta_time = time.ticks_diff(current_time, last_data[3] / 1000) # Should be 1 in an ideal world
+
+        velocity = delta_alt / delta_time
+    else velocity = 0
+
+    #print(f"Temperature: {temperature}˚c\nPressure: {pressure}\nAltitude: {altitude}")
+
+    # CSV wants: time, speed, temp, alt, pressure
+    radio.send(f"{current_time}, {speed}, {temperature}, {altitude}, {pressure}")
+
+    last_data = [temperature, pressure, altitude, current_time, velocity]
 
 
 def calculate_altitude(pressure):
