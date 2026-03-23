@@ -2,14 +2,16 @@
 import numpy as np
 import dash
 import dash_bootstrap_components as dbc
+from dash_bootstrap_templates import load_figure_template
 from dash import dcc, Input, Output, html
 import plotly.express as px
 import pandas as pd
 
 
 # loading data
+CSV_FILE = 'laptop_basestation/assets/values.csv'
 def load_data():
-    data = pd.read_csv('assets/values.csv')
+    data = pd.read_csv(CSV_FILE)
     data["time_sec"] = pd.to_numeric(data["time_sec"], errors='coerce')
     data["speed_m_s"] = pd.to_numeric(data["speed_m_s"], errors='coerce')
     data["temperature_C"] = pd.to_numeric(data["temperature_C"], errors='coerce')
@@ -17,125 +19,113 @@ def load_data():
     data["pressure_hPa"] = pd.to_numeric(data["pressure_hPa"], errors='coerce')
     return data 
 
-
-data = load_data()
-
-# calculate avgs and totals
-time_taken = len(data)
-avg_speed = np.mean(data["speed_m_s"]).round(1)
-avg_temp = np.mean(data["temperature_C"]).round(1)
-avg_pressure = np.mean(data["pressure_hPa"]).round(1)
-
 # initialisation of web app
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SLATE])
+load_figure_template("SIMPLEX_DARK")
 
 # the layout of web app
 app.layout = dbc.Container([
     dbc.Row([
-        dbc.Col(html.H1("CANSAT Dashboard"), width=20, className="text-center my-5")
+        dbc.Col(html.H1("CANSAT Dashboard"), width=12, className="text-center my-5")
     ]),
-
-    # stats and that
+ 
+    # stats row
     dbc.Row([
-        dbc.Col(html.Div(f"Total runtime: {time_taken} seconds", className="text-center my-2 top-text"), width=20),
-        dbc.Col(html.Div(f"Average speed: {avg_speed} m/s", className="text-center my-2 top-text"), width=20),
-        dbc.Col(html.Div(f"Average temperature: {avg_temp} °C", className="text-center my-2 top-text"), width=20),
-        dbc.Col(html.Div(f"Average pressure: {avg_pressure} hPa", className="text-center my-2 top-text"), width=20),
+        dbc.Col(html.Div(id="runtime_stats"),    className="text-center my-2"),
+        dbc.Col(html.Div(id="speed_stats"),      className="text-center my-2"),
+        dbc.Col(html.Div(id="temp_stats"),       className="text-center my-2"),
+        dbc.Col(html.Div(id="pressure_stats"),   className="text-center my-2"),
     ], className="mb-5"),
 
-
+    # check out this ONE single interval yo 
+    dcc.Interval(id="goatedinterval", 
+                 interval=1000, 
+                 n_intervals=0),
+ 
     dbc.Row([
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H4("Speed readings", className="card-title"),
-                    dcc.Graph(id="speedgraph"),
-                    dcc.Interval(
-                        id="updatespeed",
-                        interval=1000,
-                        n_intervals=0),
-                ])
-            ])
-        ], width=6),
-
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H4("Temperature readings", className="card-title"),
-                    dcc.Graph(id="temperaturegraph"),
-                    dcc.Interval(
-                        id="updatetemperature",
-                        interval=1000,
-                        n_intervals=0),
-                ])
-            ])
-        ], width=6),
-
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H4("Pressure readings", className="card-title"),
-                    dcc.Graph(id="pressuregraph"),
-                    dcc.Interval(
-                        id="updatepressure",
-                        interval=1000,
-                        n_intervals=0),
-                ])
-            ])
-        ], width=6),
-
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H4("Altitude readings", className="card-title"),
-                    dcc.Graph(id="altitudegraph"),
-                    dcc.Interval(
-                        id="updatealtitude",
-                        interval=1000,
-                        n_intervals=0),
-                ])
-            ])
-        ], width=6),
+        dbc.Col(dbc.Card(dbc.CardBody([
+            html.H4("Speed readings", className="card-title"),
+            dcc.Graph(id="speedgraph"),
+        ])), width=6),
+ 
+        dbc.Col(dbc.Card(dbc.CardBody([
+            html.H4("Temperature readings", className="card-title"),
+            dcc.Graph(id="temperaturegraph"),
+        ])), width=6),
+ 
+        dbc.Col(dbc.Card(dbc.CardBody([
+            html.H4("Pressure readings", className="card-title"),
+            dcc.Graph(id="pressuregraph"),
+        ])), width=6),
+ 
+        dbc.Col(dbc.Card(dbc.CardBody([
+            html.H4("Altitude readings", className="card-title"),
+            dcc.Graph(id="altitudegraph"),
+        ])), width=6),
     ]),
 ], fluid=True)
 
-
-# callbacks
+# the ONE single callback this is getting spicy
 @app.callback(
-    Output('speedgraph','figure'),
-    Input('updatespeed','n_intervals')
+    Output("runtime_stats","children"),
+    Output("speed_stats","children"),
+    Output("temp_stats","children"),
+    Output("pressure_stats","children"),
+    Output("speedgraph","figure"),
+    Output("temperaturegraph","figure"),
+    Output("pressuregraph","figure"),
+    Output("altitudegraph","figure"),
+    Input("goatedinterval","n_intervals"),
 )
-def update_speed_graph(n):
-    fig = px.line(data, x="time_sec", y="speed_m_s", title=f"Current Speed: {load_data().tail(1)['speed_m_s'].values[0]} m/s")
-    fig.update_layout(xaxis_title="Time (seconds)", yaxis_title="Speed (m/s)")
-    return fig
 
-@app.callback(
-    Output('temperaturegraph','figure'),
-    Input('updatetemperature','n_intervals')
-)
-def update_temperature_graph(n):
-    fig = px.line(data, x="time_sec", y="temperature_C", title=f"Current Temperature: {load_data().tail(1)['temperature_C'].values[0]} °C")
-    fig.update_layout(xaxis_title="Time (seconds)", yaxis_title="Temperature (°C)")
-    return fig
+# HOPEFULLY it updates in real time now
+def update_data(n):
 
-@app.callback(
-    Output('pressuregraph','figure'),
-    Input('updatepressure','n_intervals')
-)
-def update_pressure_graph(n):
-    fig = px.line(data, x="time_sec", y="pressure_hPa", title=f"Current Pressure: {load_data().tail(1)['pressure_hPa'].values[0]} hPa")
-    fig.update_layout(xaxis_title="Time (seconds)", yaxis_title="Pressure (hPa)")
-    return fig
+    # this is incase NO data gets sent to the csv yet, so it doesn't break it completely
+    try:
+        data = load_data()
+    except Exception as e:
+        print(f"Error loading data: {e}")
+        return ["Error loading data"] * 4 + [{}] * 4
+ 
+    if data.empty or data["time_sec"].dropna().empty:
+        no_data_message = "No data available yet"
+        return [no_data_message] * 4 + [{}] * 4
+    
+    # calculate avgs and totals
+    time_taken = np.max(data["time_sec"])
+    avg_speed = np.mean(data["speed_m_s"]).round(1)
+    avg_temp = np.mean(data["temperature_C"]).round(1)
+    avg_pressure = np.mean(data["pressure_hPa"]).round(1)
 
-@app.callback(
-    Output('altitudegraph','figure'),
-    Input('updatealtitude','n_intervals')
-)
-def update_altitude_graph(n):
-    fig = px.line(data, x="time_sec", y="altitude_m", title=f"Current Altitude: {load_data().tail(1)['altitude_m'].values[0]} meters")
-    fig.update_layout(xaxis_title="Time (seconds)", yaxis_title="Altitude (meters)")
-    return fig
+    # stats to display
+    runtime_stats = f"Total runtime: {time_taken} seconds"
+    speed_stats = f"Average speed: {avg_speed} m/s"
+    temp_stats = f"Average temperature: {avg_temp} °C"
+    pressure_stats = f"Average pressure: {avg_pressure} hPa"
+
+    current_speed = data["speed_m_s"].dropna().tail(1).values[0]
+    current_temp = data["temperature_C"].dropna().tail(1).values[0]
+    current_pressure = data["pressure_hPa"].dropna().tail(1).values[0]
+    current_altitude = data["altitude_m"].dropna().tail(1).values[0]
+
+    fig_speed = px.line(data, x="time_sec", y="speed_m_s",
+                        title=f"Current Speed: {current_speed} m/s")
+    fig_speed.update_layout(xaxis_title="Time (seconds)", yaxis_title="Speed (m/s)")
+ 
+    fig_temp = px.line(data, x="time_sec", y="temperature_C",
+                       title=f"Current Temperature: {current_temp} °C")
+    fig_temp.update_layout(xaxis_title="Time (seconds)", yaxis_title="Temperature (°C)")
+ 
+    fig_pressure = px.line(data, x="time_sec", y="pressure_hPa",
+                           title=f"Current Pressure: {current_pressure} hPa")
+    fig_pressure.update_layout(xaxis_title="Time (seconds)", yaxis_title="Pressure (hPa)")
+ 
+    fig_alt = px.line(data, x="time_sec", y="altitude_m",
+                      title=f"Current Altitude: {current_altitude} meters")
+    fig_alt.update_layout(xaxis_title="Time (seconds)", yaxis_title="Altitude (meters)")
+
+    return runtime_stats, speed_stats, temp_stats, pressure_stats, fig_speed, fig_temp, fig_pressure, fig_alt
 
 # run the app
 if __name__ == "__main__":
