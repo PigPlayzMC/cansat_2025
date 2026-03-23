@@ -2,7 +2,6 @@
 import numpy as np
 import dash
 import dash_bootstrap_components as dbc
-from dash_bootstrap_templates import load_figure_template
 from dash import dcc, Input, Output, html
 import plotly.express as px
 import pandas as pd
@@ -10,7 +9,7 @@ import pandas as pd
 
 # loading data
 def load_data():
-    data = pd.read_csv('assets/samplevalues.csv')
+    data = pd.read_csv('assets/values.csv')
     data["time_sec"] = pd.to_numeric(data["time_sec"], errors='coerce')
     data["speed_m_s"] = pd.to_numeric(data["speed_m_s"], errors='coerce')
     data["temperature_C"] = pd.to_numeric(data["temperature_C"], errors='coerce')
@@ -28,8 +27,7 @@ avg_temp = np.mean(data["temperature_C"]).round(1)
 avg_pressure = np.mean(data["pressure_hPa"]).round(1)
 
 # initialisation of web app
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SLATE],)
-load_figure_template("SIMPLEX_DARK")
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 # the layout of web app
 app.layout = dbc.Container([
@@ -51,7 +49,7 @@ app.layout = dbc.Container([
             dbc.Card([
                 dbc.CardBody([
                     html.H4("Speed readings", className="card-title"),
-                    dcc.Graph(id="speedgraph", style={'height': '600px'}),
+                    dcc.Graph(id="speedgraph"),
                     dcc.Interval(
                         id="updatespeed",
                         interval=1000,
@@ -64,7 +62,7 @@ app.layout = dbc.Container([
             dbc.Card([
                 dbc.CardBody([
                     html.H4("Temperature readings", className="card-title"),
-                    dcc.Graph(id="temperaturegraph", style={'height': '600px'}),
+                    dcc.Graph(id="temperaturegraph"),
                     dcc.Interval(
                         id="updatetemperature",
                         interval=1000,
@@ -77,7 +75,7 @@ app.layout = dbc.Container([
             dbc.Card([
                 dbc.CardBody([
                     html.H4("Pressure readings", className="card-title"),
-                    dcc.Graph(id="pressuregraph", style={'height': '600px'}),
+                    dcc.Graph(id="pressuregraph"),
                     dcc.Interval(
                         id="updatepressure",
                         interval=1000,
@@ -90,7 +88,7 @@ app.layout = dbc.Container([
             dbc.Card([
                 dbc.CardBody([
                     html.H4("Altitude readings", className="card-title"),
-                    dcc.Graph(id="altitudegraph", style={'height': '600px'}),
+                    dcc.Graph(id="altitudegraph"),
                     dcc.Interval(
                         id="updatealtitude",
                         interval=1000,

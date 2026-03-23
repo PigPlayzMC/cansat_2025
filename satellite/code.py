@@ -17,6 +17,7 @@ SEA_LEVEL_PRESSURE = 101325
 
 led = dg.DigitalInOut(b.GP25)
 led.direction = dg.Direction.OUTPUT
+led.direction = dg.Direction.OUTPUT
 
 last_data = []
 
@@ -33,7 +34,7 @@ while true:
     led.value = true
     t.sleep(0.5)
 
-    current_time = tk.ticks_ms() / 1000 - 536788
+    current_time = tk.ticks_ms() / 1000 - 20 - 536788
 
     temperature = bmp280.temperature()
     pressure = bmp280.pressure()
@@ -41,10 +42,12 @@ while true:
 
     if last_data != []:
         delta_alt = altitude - last_data[2]
-        
+
         print(f"{current_time}, {last_data[4]}")
-        
+
         delta_time = tk.ticks_diff(m.floor(current_time), m.floor(last_data[4])) # Should be 1 in an ideal world
+
+        print(f"{delta_time}")
 
         velocity = delta_alt / delta_time
     else:
@@ -53,8 +56,8 @@ while true:
     #print(f"Temperature: {temperature}˚c\nPressure: {pressure}\nAltitude: {altitude}")
 
     # CSV wants: time, speed, temp, alt, pressure
-    radio.send(f"{current_time}, {velocity}, {temperature}, {altitude}, {pressure}")
+    radio.send(f"{velocity}, {temperature}, {altitude}, {pressure}")
 
     last_data = [temperature, pressure, altitude, current_time, velocity]
-    
+
     print("Updated last_data[]")
