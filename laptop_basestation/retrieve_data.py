@@ -12,7 +12,7 @@ values_file.write("time_sec,speed_m_s,temperature_C,altitude_m,pressure_hPa\r\n"
 values_file.close()
 
 while True:
-    data = serial_connection.read(60)
+    data = serial_connection.read(1)
     if data == b"EOF":
         break
 

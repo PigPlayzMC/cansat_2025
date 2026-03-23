@@ -21,3 +21,5 @@ laptop_basestation/assets/values.csv
 .DS_Store
 website/access.txt
 website/posts/post_styling.css
+laptop_basestation/assets/values.csv
+*.csv
