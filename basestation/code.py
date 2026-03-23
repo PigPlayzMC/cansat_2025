@@ -3,14 +3,15 @@ import rfm9x
 packet_count = 0
 
 while True:
+    #print("Reading")
     recieved_data = rfm9x.read()
 
     if recieved_data is not None:
-        print(f"RADIO {packet_count}: {str(radio_message, 'ascii')}")
-        rssi = rfm9x.get_rssi()
-        print(f"RSSI: {rssi}")
+        #print(f"RADIO {packet_count}: {str(recieved_data, 'ascii')}")
+        #rssi = rfm9x.get_rssi()
+        #print(f"RSSI: {rssi}")
 
-        if rssi < -90:
-            print(f"WARNING: RSSI ({rssi}) below minumum value!")
+        # This is how we serial send data
+        print(f"{packet_count}, {str(recieved_data, 'ascii')}")
 
-
+        packet_count += 1;

@@ -13,9 +13,13 @@ website/posts/*
 website/access.txt
 # Can't actually gdt access.txt to stay ignored and idk why
 
+laptop_basestation/assets/values.csv
+
 .DS_Store
 
 # Apple
 .DS_Store
 website/access.txt
 website/posts/post_styling.css
+laptop_basestation/assets/values.csv
+*.csv
