@@ -9,7 +9,7 @@ import pandas as pd
 
 
 # loading data
-CSV_FILE = 'laptop_basestation/assets/values.csv'
+CSV_FILE = 'assets/values.csv'
 def load_data():
     data = pd.read_csv(CSV_FILE)
     data["time_sec"] = pd.to_numeric(data["time_sec"], errors='coerce')
